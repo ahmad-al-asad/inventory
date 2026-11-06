@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_primary">#53DBC9</color>
+    <color name="brand_on_primary">#003731</color>
+    <color name="brand_primary_container">#005048</color>
+    <color name="brand_on_primary_container">#74F8E5</color>
+    <color name="brand_secondary_container">#324B47</color>
+    <color name="brand_on_secondary_container">#CCE8E2</color>
+
+    <color name="status_ok">#66BB6A</color>
+    <color name="status_soon">#FFCA28</color>
+    <color name="status_expired">#EF5350</color>
+    <color name="status_none">#757575</color>
+    <color name="status_on_strong">#1A0000</color>
+    <color name="status_on_soon">#241A00</color>
+</resources>

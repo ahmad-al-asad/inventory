@@ -1,0 +1,346 @@
+package com.stockkeep.app.ui;
+
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
+import com.google.android.material.textfield.TextInputLayout;
+import com.stockkeep.app.R;
+import com.stockkeep.app.data.Batch;
+import com.stockkeep.app.data.ImageStore;
+import com.stockkeep.app.data.Item;
+import com.stockkeep.app.data.Repository;
+import com.stockkeep.app.logic.DateUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class EditItemActivity extends AppCompatActivity {
+    private static final String EXTRA_ID = "item_id";
+    private static final String STATE_PHOTO = "photo";
+    private static final String STATE_ORIGINAL_PHOTO = "original_photo";
+    private static final String STATE_TEMP_PHOTOS = "temp_photos";
+    private static final String STATE_CAMERA_URI = "camera_uri";
+    private static final String STATE_LIFE_UNIT = "life_unit";
+    private static final String STATE_BOUGHT = "bought";
+    private static final String STATE_EXPIRY = "expiry";
+    private static final String STATE_OPENED = "opened";
+
+    public static Intent intent(@NonNull Context c, long itemId) {
+        Intent i = new Intent(c, EditItemActivity.class);
+        if (itemId > 0) i.putExtra(EXTRA_ID, itemId);
+        return i;
+    }
+
+    private Repository repo;
+    private long itemId;
+    @Nullable
+    private Item editing;
+
+    private ImageView photoView;
+    private View photoHint;
+    private MaterialButton btnRemovePhoto;
+    private TextInputLayout tilName;
+    private TextInputLayout tilLink;
+    private TextInputLayout tilQty;
+    private EditText nameField;
+    private EditText linkField;
+    private EditText qtyField;
+    private EditText lifeAmountField;
+    private MaterialAutoCompleteTextView unitField;
+    private MaterialAutoCompleteTextView lifeUnitField;
+    private MaterialSwitch notifyLow;
+    private MaterialSwitch notifyOut;
+    private MaterialSwitch alreadyOpened;
+    private DateField bought;
+    private DateField expiry;
+    private DateField openedOn;
+    private View tilOpened;
+
+    @Nullable
+    private String photoName;
+    @Nullable
+    private String originalPhoto;
+    private ArrayList<String> tempPhotos = new ArrayList<>();
+    @Nullable
+    private Uri cameraUri;
+    private int lifeUnitIndex = Item.LIFE_DAYS;
+    private boolean saved;
+
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickPhoto =
+            registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+                if (uri != null) importPhoto(uri);
+            });
+
+    private final ActivityResultLauncher<Uri> takePhoto =
+            registerForActivityResult(new ActivityResultContracts.TakePicture(), ok -> {
+                if (Boolean.TRUE.equals(ok) && cameraUri != null) importPhoto(cameraUri);
+            });
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_edit_item);
+        repo = Repository.get(this);
+        itemId = getIntent().getLongExtra(EXTRA_ID, 0);
+
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
+        toolbar.setOnMenuItemClickListener(mi -> {
+            if (mi.getItemId() == R.id.action_save) {
+                save();
+                return true;
+            }
+            return false;
+        });
+
+        photoView = findViewById(R.id.photo);
+        photoHint = findViewById(R.id.photo_hint);
+        btnRemovePhoto = findViewById(R.id.btn_remove_photo);
+        tilName = findViewById(R.id.til_name);
+        tilLink = findViewById(R.id.til_link);
+        tilQty = findViewById(R.id.til_qty);
+        nameField = findViewById(R.id.name);
+        linkField = findViewById(R.id.link);
+        qtyField = findViewById(R.id.qty);
+        lifeAmountField = findViewById(R.id.life_amount);
+        unitField = findViewById(R.id.unit);
+        lifeUnitField = findViewById(R.id.life_unit);
+        notifyLow = findViewById(R.id.notify_low);
+        notifyOut = findViewById(R.id.notify_out);
+        alreadyOpened = findViewById(R.id.already_opened);
+        tilOpened = findViewById(R.id.til_opened);
+        bought = new DateField(findViewById(R.id.til_bought), getSupportFragmentManager(), getString(R.string.date_bought));
+        expiry = new DateField(findViewById(R.id.til_expiry), getSupportFragmentManager(), getString(R.string.date_expiry));
+        openedOn = new DateField(findViewById(R.id.til_opened), getSupportFragmentManager(), getString(R.string.date_opened));
+
+        unitField.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,
+                getResources().getStringArray(R.array.unit_suggestions)));
+        String[] lifeUnits = getResources().getStringArray(R.array.open_life_units);
+        lifeUnitField.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, lifeUnits));
+        lifeUnitField.setOnItemClickListener((parent, view, position, id) -> lifeUnitIndex = position);
+
+        findViewById(R.id.photo_card).setOnClickListener(v -> launchGallery());
+        findViewById(R.id.btn_gallery).setOnClickListener(v -> launchGallery());
+        findViewById(R.id.btn_camera).setOnClickListener(v -> launchCamera());
+        btnRemovePhoto.setOnClickListener(v -> {
+            photoName = null;
+            showPhoto();
+        });
+        alreadyOpened.setOnCheckedChangeListener((sw, checked) -> tilOpened.setVisibility(checked ? View.VISIBLE : View.GONE));
+        findViewById(R.id.btn_save).setOnClickListener(v -> save());
+
+        boolean isEdit = itemId > 0;
+        toolbar.setTitle(isEdit ? R.string.edit_item : R.string.new_item);
+        findViewById(R.id.initial_section).setVisibility(isEdit ? View.GONE : View.VISIBLE);
+
+        if (savedInstanceState != null) {
+            photoName = savedInstanceState.getString(STATE_PHOTO);
+            originalPhoto = savedInstanceState.getString(STATE_ORIGINAL_PHOTO);
+            ArrayList<String> temps = savedInstanceState.getStringArrayList(STATE_TEMP_PHOTOS);
+            if (temps != null) tempPhotos = temps;
+            String cam = savedInstanceState.getString(STATE_CAMERA_URI);
+            cameraUri = cam == null ? null : Uri.parse(cam);
+            lifeUnitIndex = savedInstanceState.getInt(STATE_LIFE_UNIT, Item.LIFE_DAYS);
+            bought.set(getLongOrNull(savedInstanceState, STATE_BOUGHT));
+            expiry.set(getLongOrNull(savedInstanceState, STATE_EXPIRY));
+            openedOn.set(getLongOrNull(savedInstanceState, STATE_OPENED));
+        } else if (!isEdit) {
+            qtyField.setText("1");
+            bought.set(DateUtil.today());
+            openedOn.set(DateUtil.today());
+        }
+        lifeUnitField.setText(lifeUnits[lifeUnitIndex], false);
+        tilOpened.setVisibility(alreadyOpened.isChecked() ? View.VISIBLE : View.GONE);
+        showPhoto();
+
+        if (isEdit) {
+            repo.load(itemId, iwb -> {
+                if (iwb == null) {
+                    finish();
+                    return;
+                }
+                editing = iwb.item;
+                if (savedInstanceState == null) fill(iwb.item, lifeUnits);
+            });
+        }
+    }
+
+    private void fill(Item item, String[] lifeUnits) {
+        nameField.setText(item.name);
+        unitField.setText(item.unit == null ? "" : item.unit, false);
+        linkField.setText(item.buyLink == null ? "" : item.buyLink);
+        lifeAmountField.setText(item.openLifeAmount == null ? "" : String.valueOf(item.openLifeAmount));
+        lifeUnitIndex = Math.max(0, Math.min(lifeUnits.length - 1, item.openLifeUnit));
+        lifeUnitField.setText(lifeUnits[lifeUnitIndex], false);
+        notifyLow.setChecked(item.notifyLow);
+        notifyOut.setChecked(item.notifyOut);
+        photoName = item.photo;
+        originalPhoto = item.photo;
+        showPhoto();
+    }
+
+    private void launchGallery() {
+        pickPhoto.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build());
+    }
+
+    private void launchCamera() {
+        try {
+            cameraUri = ImageStore.newCameraUri(this);
+            takePhoto.launch(cameraUri);
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.camera_unavailable, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void importPhoto(@NonNull Uri uri) {
+        Context app = getApplicationContext();
+        repo.io().execute(() -> {
+            String name = ImageStore.importImage(app, uri);
+            runOnUiThread(() -> {
+                if (name == null) {
+                    Toast.makeText(app, R.string.photo_failed, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                tempPhotos.add(name);
+                if (isDestroyed()) {
+                    ImageStore.delete(app, name);
+                    return;
+                }
+                photoName = name;
+                showPhoto();
+            });
+        });
+    }
+
+    private void showPhoto() {
+        boolean has = photoName != null;
+        photoHint.setVisibility(has ? View.GONE : View.VISIBLE);
+        btnRemovePhoto.setVisibility(has ? View.VISIBLE : View.GONE);
+        if (has) {
+            UiUtil.loadPhoto(photoView, photoName);
+        } else {
+            com.bumptech.glide.Glide.with(photoView).clear(photoView);
+            photoView.setImageDrawable(null);
+        }
+    }
+
+    private void save() {
+        if (itemId > 0 && editing == null) return; // still loading
+
+        String name = nameField.getText() == null ? "" : nameField.getText().toString().trim();
+        if (name.isEmpty()) {
+            tilName.setError(getString(R.string.err_name));
+            nameField.requestFocus();
+            return;
+        }
+        tilName.setError(null);
+
+        String link = UiUtil.normalizeLink(linkField.getText() == null ? null : linkField.getText().toString());
+        if (link != null && !UiUtil.isValidLink(link)) {
+            tilLink.setError(getString(R.string.err_link));
+            return;
+        }
+        tilLink.setError(null);
+
+        Item item = editing != null ? editing : new Item();
+        item.name = name;
+        String unit = unitField.getText() == null ? "" : unitField.getText().toString().trim();
+        item.unit = unit.isEmpty() ? null : unit;
+        item.buyLink = link;
+        int lifeAmount = UiUtil.parseInt(lifeAmountField.getText(), 0);
+        item.openLifeAmount = lifeAmount > 0 ? lifeAmount : null;
+        item.openLifeUnit = lifeUnitIndex;
+        item.notifyLow = notifyLow.isChecked();
+        item.notifyOut = notifyOut.isChecked();
+        item.photo = photoName;
+
+        if (editing != null) {
+            repo.updateItem(item);
+        } else {
+            int qty = UiUtil.parseInt(qtyField.getText(), -1);
+            if (qty < 0) {
+                tilQty.setError(getString(R.string.err_quantity_zero));
+                return;
+            }
+            tilQty.setError(null);
+            List<Batch> batches = new ArrayList<>();
+            if (qty > 0) {
+                Batch sealed = new Batch();
+                sealed.purchaseDate = bought.get();
+                sealed.expiryDate = expiry.get();
+                if (alreadyOpened.isChecked()) {
+                    Batch opened = sealed.copy();
+                    opened.quantity = 1;
+                    Long day = openedOn.get();
+                    opened.openedDate = day != null ? day : DateUtil.today();
+                    batches.add(opened);
+                    sealed.quantity = qty - 1;
+                } else {
+                    sealed.quantity = qty;
+                }
+                batches.add(sealed);
+            }
+            repo.createItem(item, batches, null);
+        }
+
+        saved = true;
+        for (String temp : tempPhotos) {
+            if (!temp.equals(photoName)) ImageStore.delete(getApplicationContext(), temp);
+        }
+        if (originalPhoto != null && !originalPhoto.equals(photoName)) {
+            ImageStore.delete(getApplicationContext(), originalPhoto);
+        }
+        finish();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle out) {
+        super.onSaveInstanceState(out);
+        out.putString(STATE_PHOTO, photoName);
+        out.putString(STATE_ORIGINAL_PHOTO, originalPhoto);
+        out.putStringArrayList(STATE_TEMP_PHOTOS, tempPhotos);
+        if (cameraUri != null) out.putString(STATE_CAMERA_URI, cameraUri.toString());
+        out.putInt(STATE_LIFE_UNIT, lifeUnitIndex);
+        putLongOrNull(out, STATE_BOUGHT, bought.get());
+        putLongOrNull(out, STATE_EXPIRY, expiry.get());
+        putLongOrNull(out, STATE_OPENED, openedOn.get());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Leaving without saving: throw away photos that were picked in this screen.
+        if (isFinishing() && !saved) {
+            for (String temp : tempPhotos) ImageStore.delete(getApplicationContext(), temp);
+        }
+    }
+
+    private static void putLongOrNull(Bundle b, String key, @Nullable Long value) {
+        if (value != null) b.putLong(key, value);
+    }
+
+    @Nullable
+    private static Long getLongOrNull(Bundle b, String key) {
+        return b.containsKey(key) ? b.getLong(key) : null;
+    }
+}

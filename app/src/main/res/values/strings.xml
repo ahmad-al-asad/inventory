@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">StockKeep</string>
+
+    <!-- Home -->
+    <string name="add_item">Add item</string>
+    <string name="search">Search</string>
+    <string name="search_hint">Search items</string>
+    <string name="sort_by">Sort by</string>
+    <string name="settings">Settings</string>
+    <string name="filter_all">All</string>
+    <string name="filter_soon">Expiring soon</string>
+    <string name="filter_expired">Expired</string>
+    <string name="filter_opened">Opened</string>
+    <string name="filter_low">Low stock</string>
+    <string name="empty_title">Nothing here yet</string>
+    <string name="empty_text">Tap \"Add item\" to start tracking what you have at home.</string>
+    <string name="empty_filtered_title">No matching items</string>
+    <string name="empty_filtered_text">Try another filter or search.</string>
+    <string name="item_deleted">%1$s deleted</string>
+    <string name="undo">Undo</string>
+
+    <!-- Quantities and badges -->
+    <string name="out_of_stock">Out of stock</string>
+    <string name="qty_in_stock">%1$d%2$s in stock</string>
+    <string name="qty_last">Only 1 left</string>
+    <string name="n_opened">%1$d opened</string>
+    <string name="badge_out">Out</string>
+    <string name="badge_expired">Expired</string>
+    <string name="badge_today">Today</string>
+    <string name="badge_tomorrow">Tomorrow</string>
+    <string name="badge_days">%1$d days</string>
+
+    <!-- Relative dates -->
+    <string name="rel_expired_days_ago">expired %1$d days ago</string>
+    <string name="rel_expired_yesterday">expired yesterday</string>
+    <string name="rel_today">today</string>
+    <string name="rel_tomorrow">tomorrow</string>
+    <string name="rel_in_days">in %1$d days</string>
+    <string name="rel_on_date">on %1$s</string>
+
+    <!-- Detail -->
+    <string name="back">Back</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="use_one">Use one</string>
+    <string name="restock">Restock</string>
+    <string name="action_buy">Buy</string>
+    <string name="use_first">Use first: %1$s (%2$s)</string>
+    <string name="batches_title">Stock</string>
+    <string name="batches_empty">No stock right now. Tap Restock when you buy more.</string>
+    <string name="batch_sealed">Sealed</string>
+    <string name="batch_opened_on">Opened %1$s</string>
+    <string name="use_by">Use by %1$s · %2$s</string>
+    <string name="no_expiry">No expiry date</string>
+    <string name="printed_expiry">Printed expiry %1$s</string>
+    <string name="bought_on">Bought %1$s</string>
+    <string name="open_one">Open one</string>
+    <string name="add_one">Add one</string>
+    <string name="remove_one">Remove one</string>
+    <string name="delete_batch_title">Delete this stock?</string>
+    <string name="delete_batch_text">These units will be removed from your inventory.</string>
+    <string name="delete_item_title">Delete %1$s?</string>
+    <string name="delete_item_text">The item, its photo and all its stock will be removed.</string>
+    <string name="no_browser">No app found to open this link</string>
+    <plurals name="open_life_days">
+        <item quantity="one">Lasts %1$d day once opened</item>
+        <item quantity="other">Lasts %1$d days once opened</item>
+    </plurals>
+
+    <!-- Batch dialog -->
+    <string name="restock_title">Add stock</string>
+    <string name="edit_batch_title">Edit stock</string>
+    <string name="batch_is_opened">This is opened</string>
+    <string name="err_quantity">Enter at least 1</string>
+
+    <!-- Add / edit -->
+    <string name="new_item">New item</string>
+    <string name="edit_item">Edit item</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="add_photo">Tap to add a photo</string>
+    <string name="camera">Camera</string>
+    <string name="gallery">Gallery</string>
+    <string name="remove">Remove</string>
+    <string name="camera_unavailable">Camera not available</string>
+    <string name="photo_failed">Couldn\'t load that photo</string>
+    <string name="hint_name">Name *</string>
+    <string name="hint_unit">Unit (optional)</string>
+    <string name="helper_unit">e.g. bottles, packs, ml</string>
+    <string name="hint_link">Where to buy (link)</string>
+    <string name="section_open_life">Open life</string>
+    <string name="open_life_help">How long it stays good after opening. Leave empty if it doesn\'t matter.</string>
+    <string name="hint_life_amount">Amount</string>
+    <string name="hint_life_unit">Unit</string>
+    <string name="section_notifications">Notifications</string>
+    <string name="notify_low">Notify me when only 1 is left</string>
+    <string name="notify_out">Notify me when it runs out</string>
+    <string name="section_stock">Current stock</string>
+    <string name="hint_quantity">Quantity</string>
+    <string name="date_bought">Date bought</string>
+    <string name="date_expiry">Expiry date</string>
+    <string name="date_opened">Date opened</string>
+    <string name="clear_date">Clear date</string>
+    <string name="already_opened">One of these is already opened</string>
+    <string name="err_name">Please enter a name</string>
+    <string name="err_link">This doesn\'t look like a web link</string>
+    <string name="err_quantity_zero">Enter 0 or more</string>
+
+    <!-- Notifications -->
+    <string name="channel_stock">Stock alerts</string>
+    <string name="channel_stock_desc">When an item is down to 1 or runs out</string>
+    <string name="channel_expiry">Expiry reminders</string>
+    <string name="channel_expiry_desc">Daily reminder about expired or soon-expiring items</string>
+    <string name="notif_low_title">Last %1$s left</string>
+    <string name="notif_low_text">Only 1 left. Time to restock soon.</string>
+    <string name="notif_out_title">Out of %1$s</string>
+    <string name="notif_out_text">You\'ve used the last one.</string>
+    <string name="notif_expiry_both">%1$d expired, %2$d expiring soon</string>
+    <string name="notif_line_expired">%1$s: expired</string>
+    <string name="notif_line_soon">%1$s: %2$s</string>
+    <plurals name="notif_expired_count">
+        <item quantity="one">%1$d item has expired</item>
+        <item quantity="other">%1$d items have expired</item>
+    </plurals>
+    <plurals name="notif_soon_count">
+        <item quantity="one">%1$d item expires soon</item>
+        <item quantity="other">%1$d items expire soon</item>
+    </plurals>
+
+    <!-- Settings -->
+    <string name="pref_cat_expiry">Expiry</string>
+    <string name="pref_soon_days">Count as \"expiring soon\"</string>
+    <string name="pref_expiry_notif">Daily expiry reminder</string>
+    <string name="pref_expiry_notif_summary">One notification each morning if something has expired or is about to</string>
+    <string name="pref_cat_appearance">Appearance</string>
+    <string name="pref_theme">Theme</string>
+    <string name="pref_cat_backup">Backup</string>
+    <string name="pref_export">Export backup</string>
+    <string name="pref_export_summary">Save all items, stock and photos to one file</string>
+    <string name="pref_import">Restore backup</string>
+    <string name="pref_import_summary">Replace everything with a backup file</string>
+    <string name="pref_cat_about">About</string>
+    <string name="pref_version">Version</string>
+    <string name="version_summary">%1$s (build %2$d)</string>
+    <string name="restore">Restore</string>
+    <string name="restore_confirm_title">Restore backup?</string>
+    <string name="restore_confirm_text">Everything currently in the app will be replaced by the backup. This can\'t be undone.</string>
+    <string name="export_failed">Export failed: %1$s</string>
+    <string name="restore_failed">Restore failed: %1$s</string>
+    <plurals name="export_done">
+        <item quantity="one">Backup saved (%1$d item)</item>
+        <item quantity="other">Backup saved (%1$d items)</item>
+    </plurals>
+    <plurals name="restore_done">
+        <item quantity="one">Restored %1$d item</item>
+        <item quantity="other">Restored %1$d items</item>
+    </plurals>
+</resources>

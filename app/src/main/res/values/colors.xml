@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colours (used on Android 8-11; Android 12+ uses wallpaper colours) -->
+    <color name="brand_primary">#006A60</color>
+    <color name="brand_on_primary">#FFFFFF</color>
+    <color name="brand_primary_container">#74F8E5</color>
+    <color name="brand_on_primary_container">#00201C</color>
+    <color name="brand_secondary_container">#CCE8E2</color>
+    <color name="brand_on_secondary_container">#051F1C</color>
+    <color name="launcher_background">#006A60</color>
+
+    <!-- Expiry status -->
+    <color name="status_ok">#2E7D32</color>
+    <color name="status_soon">#F9A825</color>
+    <color name="status_expired">#C62828</color>
+    <color name="status_none">#9E9E9E</color>
+    <color name="status_on_strong">#FFFFFF</color>
+    <color name="status_on_soon">#241A00</color>
+</resources>

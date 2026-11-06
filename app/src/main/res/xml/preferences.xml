@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/pref_cat_expiry" app:iconSpaceReserved="false">
+        <ListPreference
+            app:key="soon_days"
+            app:title="@string/pref_soon_days"
+            app:entries="@array/soon_days_entries"
+            app:entryValues="@array/soon_days_values"
+            app:defaultValue="3"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            app:key="expiry_notifications"
+            app:title="@string/pref_expiry_notif"
+            app:summary="@string/pref_expiry_notif_summary"
+            app:defaultValue="true"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_cat_appearance" app:iconSpaceReserved="false">
+        <ListPreference
+            app:key="theme"
+            app:title="@string/pref_theme"
+            app:entries="@array/theme_entries"
+            app:entryValues="@array/theme_values"
+            app:defaultValue="system"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_cat_backup" app:iconSpaceReserved="false">
+        <Preference
+            app:key="export"
+            app:title="@string/pref_export"
+            app:summary="@string/pref_export_summary"
+            app:iconSpaceReserved="false" />
+        <Preference
+            app:key="import"
+            app:title="@string/pref_import"
+            app:summary="@string/pref_import_summary"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_cat_about" app:iconSpaceReserved="false">
+        <Preference
+            app:key="version"
+            app:title="@string/pref_version"
+            app:selectable="false"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

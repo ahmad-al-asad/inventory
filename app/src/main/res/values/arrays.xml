@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="sort_options">
+        <item>Expiring soonest</item>
+        <item>Name (A–Z)</item>
+        <item>Recently added</item>
+        <item>Lowest stock</item>
+    </string-array>
+    <string-array name="unit_suggestions">
+        <item>pcs</item>
+        <item>bottles</item>
+        <item>packs</item>
+        <item>boxes</item>
+        <item>cans</item>
+        <item>jars</item>
+        <item>bags</item>
+        <item>tubes</item>
+        <item>rolls</item>
+    </string-array>
+    <string-array name="open_life_units">
+        <item>Days</item>
+        <item>Weeks</item>
+        <item>Months</item>
+    </string-array>
+    <string-array name="soon_days_entries">
+        <item>1 day before</item>
+        <item>2 days before</item>
+        <item>3 days before</item>
+        <item>5 days before</item>
+        <item>7 days before</item>
+        <item>14 days before</item>
+        <item>30 days before</item>
+    </string-array>
+    <string-array name="soon_days_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>5</item>
+        <item>7</item>
+        <item>14</item>
+        <item>30</item>
+    </string-array>
+    <string-array name="theme_entries">
+        <item>System default</item>
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+    <string-array name="theme_values">
+        <item>system</item>
+        <item>light</item>
+        <item>dark</item>
+    </string-array>
+</resources>
