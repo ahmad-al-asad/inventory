@@ -4,39 +4,30 @@ A simple, offline Android app for keeping track of what you have at home: photo,
 
 Java · Material 3 · Room (SQLite) · Android 8.0+ · no internet or account needed.
 
-## Get the APK (pick one)
+## Install it
 
-**A. Android Studio (easiest on a computer)**
-1. Open this folder in Android Studio (File → Open).
-2. Wait for the first sync to finish (it downloads the Android libraries).
-3. Phone plugged in with USB debugging on → press ▶ Run.
-   Or: Build → Build App Bundle(s) / APK(s) → Build APK(s), then copy the APK to your phone.
+1. On your Android phone, open **https://github.com/ahmad-al-asad/inventory/releases/latest**
+2. Tap **StockKeep-x.y.z.apk** to download it, then open it.
+3. If Android asks, allow your browser to "install unknown apps", then tap **Install**.
 
-**B. GitHub (no installs, works from a phone)**
-1. Put this folder in a **private** GitHub repository and push it.
-2. Open the repository's **Actions** tab → "Build APK" runs automatically.
-3. When it finishes, download **StockKeep-apk** from the run page, unzip it and open the APK on your phone.
+Everything you add stays on your own phone. The app has no internet permission and no account, so nothing is shared with anyone, including the developer.
 
-**C. Docker**
-```
-docker build -t stockkeep-builder .
-docker run --rm -v "$PWD":/app stockkeep-builder
-```
-The APK appears in `app/build/outputs/apk/release/`.
+## Build it yourself
 
-On the phone, Android will ask you to allow installing apps from the browser or file manager the first time.
+- **Android Studio:** open this folder and press Run.
+- **Docker:** `docker build -t stockkeep-builder . && docker run --rm -v "$PWD":/app stockkeep-builder`
 
-## Updating later without losing data
+Without the maintainer's signing key, your build is signed with a debug key. It works, but it can't be installed over the official release (uninstall that first).
 
-Android keeps an app's data when a new APK is installed over it, as long as:
+## For the maintainer: signing and updates
 
-1. **The package name stays `com.stockkeep.app`** (in `app/build.gradle`).
-2. **It is signed with the same key.** That key is `keystore/stockkeep.jks` (passwords in `keystore.properties`). Every build is signed with it, whichever method you use. **Keep a copy of both files somewhere safe.** If they are lost, a new version can't be installed over the old one.
-3. **`versionCode` goes up** for each new version (1 → 2 → 3 …).
+The signing key is **not** in this repository.
+- Locally: keep `release.jks` and `signing.properties` in the project folder (gitignored).
+- GitHub Actions: repository secrets `KEYSTORE_BASE64` and `KEYSTORE_PASSWORD`.
 
-If a new version changes the database, it must include a Room *migration* (see the comment in `AppDatabase.java`). The app never wipes data on upgrade.
+To publish an update without users losing data: keep `applicationId` the same, sign with the same key, and increase `versionCode` (and `versionName`) in `app/build.gradle`. Pushing to `main` then publishes a new release automatically. Database changes need a Room migration (see `AppDatabase.java`).
 
-As an extra safety net, use **Settings → Export backup** now and then. It saves everything (including photos) to one `.zip` file that **Restore backup** can read back, even on a new phone.
+Users can also back up everything in **Settings → Export backup**.
 
 ## How stock is organised
 

@@ -2,13 +2,21 @@ plugins {
     id 'com.android.application'
 }
 
-// The signing key never changes. Every build (debug or release, on any computer)
-// is signed with it, so a new APK always installs over the old one and keeps your data.
-def keystoreProps = new Properties()
-def keystoreFile = rootProject.file('keystore.properties')
-if (keystoreFile.exists()) {
-    keystoreFile.withInputStream { keystoreProps.load(it) }
+// Signing key. It is NEVER stored in git.
+//  - On your computer: put release.jks and signing.properties in the project folder (both are gitignored).
+//  - On GitHub: the build reads the KEYSTORE_BASE64 / KEYSTORE_PASSWORD repository secrets.
+//  - Anyone else building from source: no key found, so a normal debug key is used.
+// Using the same key every time is what lets new versions install over the old app and keep its data.
+def signingProps = new Properties()
+def signingFile = rootProject.file('signing.properties')
+if (signingFile.exists()) {
+    signingFile.withInputStream { signingProps.load(it) }
 }
+def keyStorePath = System.getenv('STOCKKEEP_KEYSTORE') ?: signingProps.getProperty('storeFile')
+def keyStorePassword = System.getenv('STOCKKEEP_KEYSTORE_PASSWORD') ?: signingProps.getProperty('storePassword')
+def keyAliasName = System.getenv('STOCKKEEP_KEY_ALIAS') ?: signingProps.getProperty('keyAlias', 'stockkeep')
+def keyPasswordValue = System.getenv('STOCKKEEP_KEY_PASSWORD') ?: signingProps.getProperty('keyPassword', keyStorePassword)
+def hasReleaseKey = keyStorePath != null && keyStorePassword != null && rootProject.file(keyStorePath).exists()
 
 android {
     namespace 'com.stockkeep.app'
@@ -30,21 +38,23 @@ android {
     }
 
     signingConfigs {
-        stockkeep {
-            storeFile rootProject.file(keystoreProps.getProperty('storeFile', 'keystore/stockkeep.jks'))
-            storePassword keystoreProps.getProperty('storePassword')
-            keyAlias keystoreProps.getProperty('keyAlias')
-            keyPassword keystoreProps.getProperty('keyPassword')
+        if (hasReleaseKey) {
+            stockkeep {
+                storeFile rootProject.file(keyStorePath)
+                storePassword keyStorePassword
+                keyAlias keyAliasName
+                keyPassword keyPasswordValue
+            }
         }
     }
 
     buildTypes {
         debug {
-            signingConfig signingConfigs.stockkeep
+            if (hasReleaseKey) signingConfig signingConfigs.stockkeep
         }
         release {
             minifyEnabled false
-            signingConfig signingConfigs.stockkeep
+            signingConfig hasReleaseKey ? signingConfigs.stockkeep : signingConfigs.debug
         }
     }
 
