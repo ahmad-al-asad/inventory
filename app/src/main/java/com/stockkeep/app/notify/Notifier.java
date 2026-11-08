@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
-import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationChannelCompat;
@@ -18,6 +17,7 @@ import androidx.core.content.ContextCompat;
 
 import com.stockkeep.app.R;
 import com.stockkeep.app.data.Item;
+import com.stockkeep.app.data.Link;
 import com.stockkeep.app.ui.DetailActivity;
 import com.stockkeep.app.ui.MainActivity;
 
@@ -47,16 +47,17 @@ public final class Notifier {
     }
 
     /** Called after every stock change with the item's total quantity before and after. */
-    public static void onStockChanged(@NonNull Context c, @NonNull Item item, int before, int after) {
-        if (after == before) return;
+    public static void onStockChanged(@NonNull Context c, @NonNull Item item, @NonNull List<Link> links,
+                                      int before, int after) {
+        if (after == before || item.archived) return;
         if (after == 0 && before > 0 && item.notifyOut) {
-            postStock(c, item, c.getString(R.string.notif_out_title, item.name), c.getString(R.string.notif_out_text));
+            postStock(c, item, links, c.getString(R.string.notif_out_title, item.name), c.getString(R.string.notif_out_text));
         } else if (after == 1 && before > 1 && item.notifyLow) {
-            postStock(c, item, c.getString(R.string.notif_low_title, item.name), c.getString(R.string.notif_low_text));
+            postStock(c, item, links, c.getString(R.string.notif_low_title, item.name), c.getString(R.string.notif_low_text));
         }
     }
 
-    private static void postStock(Context c, Item item, String title, String text) {
+    private static void postStock(Context c, Item item, List<Link> links, String title, String text) {
         if (!canPost(c)) return;
         Intent open = DetailActivity.intent(c, item.id);
         PendingIntent content = TaskStackBuilder.create(c)
@@ -70,10 +71,14 @@ public final class Notifier {
                 .setContentIntent(content)
                 .setAutoCancel(true);
 
-        if (!TextUtils.isEmpty(item.buyLink)) {
-            Intent buy = new Intent(Intent.ACTION_VIEW, Uri.parse(item.buyLink));
+        if (links.size() == 1) {
+            // One shop: the button opens it directly.
+            Intent buy = new Intent(Intent.ACTION_VIEW, Uri.parse(links.get(0).url));
             PendingIntent buyPi = PendingIntent.getActivity(c, (int) item.id * 2 + 1, buy, PI_FLAGS);
             b.addAction(R.drawable.ic_cart, c.getString(R.string.action_buy), buyPi);
+        } else if (links.size() > 1) {
+            // Several shops: the button opens the item, where all the shops are listed.
+            b.addAction(R.drawable.ic_cart, c.getString(R.string.action_where_to_buy), content);
         }
         notify(c, 1000 + (int) item.id, b);
     }

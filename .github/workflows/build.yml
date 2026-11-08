@@ -51,6 +51,12 @@ jobs:
           name: StockKeep-apk
           path: StockKeep-*.apk
 
+      # The database layout Room generated, for checking migrations between versions.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: room-schemas
+          path: app/schemas/
+
       # Publishes a public download at github.com/<you>/inventory/releases for every new versionName.
       - name: Publish GitHub Release
         if: steps.key.outputs.signed == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

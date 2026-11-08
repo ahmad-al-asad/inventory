@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class MainViewModel extends AndroidViewModel {
 
-    public enum Filter { ALL, SOON, EXPIRED, OPENED, LOW }
+    public enum Filter { ALL, SOON, EXPIRED, OPENED, LOW, ARCHIVED }
 
     public static final int SORT_EXPIRY = 0;
     public static final int SORT_NAME = 1;
@@ -91,6 +91,8 @@ public class MainViewModel extends AndroidViewModel {
         List<ItemWithBatches> out = new ArrayList<>();
         for (ItemWithBatches iwb : all) {
             if (!q.isEmpty() && !iwb.item.name.toLowerCase(Locale.ROOT).contains(q)) continue;
+            // Archived (no longer used) items only show under the "Archived" filter.
+            if (iwb.item.archived != (filter == Filter.ARCHIVED)) continue;
             Long date = Expiry.soonest(iwb);
             soonest.put(iwb.item.id, date);
             Expiry.Status s = Expiry.status(date, today, soonDays);

@@ -68,7 +68,8 @@ public class Repository {
 
     // ---------- items ----------
 
-    public void createItem(@NonNull Item item, @NonNull List<Batch> batches, @Nullable Consumer<Long> done) {
+    public void createItem(@NonNull Item item, @NonNull List<Batch> batches, @NonNull List<Link> links,
+                           @Nullable Consumer<Long> done) {
         io.execute(() -> {
             long now = System.currentTimeMillis();
             item.createdAt = now;
@@ -81,13 +82,44 @@ public class Repository {
                     b.createdAt = now;
                     dao.insertBatch(b);
                 }
+                insertLinks(id[0], links);
             });
             if (done != null) main.post(() -> done.accept(id[0]));
         });
     }
 
-    public void updateItem(@NonNull Item item) {
-        io.execute(() -> dao.updateItem(item));
+    /** Saves the item and replaces its list of shop links. */
+    public void updateItem(@NonNull Item item, @NonNull List<Link> links) {
+        io.execute(() -> db.runInTransaction(() -> {
+            dao.updateItem(item);
+            dao.deleteLinksFor(item.id);
+            insertLinks(item.id, links);
+        }));
+    }
+
+    /** Marks an item as no longer used (kept for the record), or back in use. */
+    public void setArchived(long itemId, boolean archived) {
+        io.execute(() -> {
+            Item item = dao.getItem(itemId);
+            if (item == null) return;
+            item.archived = archived;
+            dao.updateItem(item);
+        });
+    }
+
+    private void insertLinks(long itemId, List<Link> links) {
+        List<Link> copy = new ArrayList<>();
+        int pos = 0;
+        for (Link l : links) {
+            if (l.url.trim().isEmpty()) continue;
+            Link n = new Link();
+            n.itemId = itemId;
+            n.label = l.label;
+            n.url = l.url.trim();
+            n.position = pos++;
+            copy.add(n);
+        }
+        if (!copy.isEmpty()) dao.insertLinks(copy);
     }
 
     public void deleteItem(@NonNull Item item) {
@@ -102,6 +134,7 @@ public class Repository {
         io.execute(() -> db.runInTransaction(() -> {
             dao.insertItem(iwb.item);
             for (Batch b : iwb.batches) dao.insertBatch(b);
+            if (!iwb.links.isEmpty()) dao.insertLinks(iwb.links);
         }));
     }
 
@@ -179,7 +212,7 @@ public class Repository {
             db.runInTransaction(change);
             int after = dao.totalFor(itemId);
             Item item = dao.getItem(itemId);
-            if (item != null) Notifier.onStockChanged(app, item, before, after);
+            if (item != null) Notifier.onStockChanged(app, item, dao.getLinks(itemId), before, after);
         });
     }
 }

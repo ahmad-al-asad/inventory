@@ -4,7 +4,10 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
@@ -93,6 +96,13 @@ public final class ImageStore {
                 }
             }
 
+            // Make it square: the whole photo fits inside, with white padding on the short sides.
+            Bitmap square = padToSquare(bmp);
+            if (square != bmp) {
+                bmp.recycle();
+                bmp = square;
+            }
+
             String name = UUID.randomUUID() + ".jpg";
             try (FileOutputStream out = new FileOutputStream(file(c, name))) {
                 bmp.compress(Bitmap.CompressFormat.JPEG, 85, out);
@@ -102,6 +112,19 @@ public final class ImageStore {
         } catch (IOException | SecurityException | OutOfMemoryError e) {
             return null;
         }
+    }
+
+    @NonNull
+    private static Bitmap padToSquare(@NonNull Bitmap src) {
+        int w = src.getWidth();
+        int h = src.getHeight();
+        if (w == h) return src;
+        int side = Math.max(w, h);
+        Bitmap out = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(out);
+        canvas.drawColor(Color.WHITE);
+        canvas.drawBitmap(src, (side - w) / 2f, (side - h) / 2f, new Paint(Paint.FILTER_BITMAP_FLAG));
+        return out;
     }
 
     public static void delete(@NonNull Context c, @Nullable String name) {

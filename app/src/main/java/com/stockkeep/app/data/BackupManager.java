@@ -33,7 +33,7 @@ import java.util.zip.ZipOutputStream;
  */
 public final class BackupManager {
     private static final String FORMAT = "stockkeep-backup";
-    private static final int FORMAT_VERSION = 1;
+    private static final int FORMAT_VERSION = 2; // 2 = links list + archived (app 1.2.0)
     private static final String DATA_ENTRY = "data.json";
     private static final String PHOTO_PREFIX = "photos/";
 
@@ -52,7 +52,7 @@ public final class BackupManager {
             o.put("name", it.name);
             o.put("photo", it.photo == null ? JSONObject.NULL : it.photo);
             o.put("unit", it.unit == null ? JSONObject.NULL : it.unit);
-            o.put("buyLink", it.buyLink == null ? JSONObject.NULL : it.buyLink);
+            o.put("archived", it.archived);
             o.put("openLifeAmount", it.openLifeAmount == null ? JSONObject.NULL : it.openLifeAmount);
             o.put("openLifeUnit", it.openLifeUnit);
             o.put("notifyLow", it.notifyLow);
@@ -71,6 +71,14 @@ public final class BackupManager {
                 batches.put(bo);
             }
             o.put("batches", batches);
+            JSONArray links = new JSONArray();
+            for (Link l : iwb.sortedLinks()) {
+                JSONObject lo = new JSONObject();
+                lo.put("label", l.label == null ? JSONObject.NULL : l.label);
+                lo.put("url", l.url);
+                links.put(lo);
+            }
+            o.put("links", links);
             items.put(o);
         }
         JSONObject root = new JSONObject();
@@ -136,6 +144,7 @@ public final class BackupManager {
 
         List<Item> items = new ArrayList<>();
         List<Batch> batches = new ArrayList<>();
+        List<Link> links = new ArrayList<>();
         JSONArray arr = root.getJSONArray("items");
         for (int i = 0; i < arr.length(); i++) {
             JSONObject o = arr.getJSONObject(i);
@@ -144,7 +153,7 @@ public final class BackupManager {
             it.name = o.getString("name");
             it.photo = optString(o, "photo");
             it.unit = optString(o, "unit");
-            it.buyLink = optString(o, "buyLink");
+            it.archived = o.optBoolean("archived", false);
             Long life = optLong(o, "openLifeAmount");
             it.openLifeAmount = life == null ? null : life.intValue();
             it.openLifeUnit = o.optInt("openLifeUnit", Item.LIFE_DAYS);
@@ -153,6 +162,30 @@ public final class BackupManager {
             it.notes = optString(o, "notes");
             it.createdAt = o.optLong("createdAt", System.currentTimeMillis());
             items.add(it);
+
+            JSONArray ls = o.optJSONArray("links");
+            if (ls != null) {
+                for (int j = 0; j < ls.length(); j++) {
+                    JSONObject lo = ls.getJSONObject(j);
+                    String url = optString(lo, "url");
+                    if (url == null || url.trim().isEmpty()) continue;
+                    Link l = new Link();
+                    l.itemId = it.id;
+                    l.label = optString(lo, "label");
+                    l.url = url.trim();
+                    l.position = j;
+                    links.add(l);
+                }
+            } else {
+                // Backups from app 1.0/1.1 had a single "buyLink".
+                String old = optString(o, "buyLink");
+                if (old != null && !old.trim().isEmpty()) {
+                    Link l = new Link();
+                    l.itemId = it.id;
+                    l.url = old.trim();
+                    links.add(l);
+                }
+            }
 
             JSONArray bs = o.optJSONArray("batches");
             if (bs == null) continue;
@@ -173,10 +206,12 @@ public final class BackupManager {
         AppDatabase db = AppDatabase.get(c);
         ItemDao dao = db.dao();
         db.runInTransaction(() -> {
+            dao.deleteAllLinks();
             dao.deleteAllBatches();
             dao.deleteAllItems();
             for (Item it : items) dao.insertItem(it);
             for (Batch b : batches) dao.insertBatch(b);
+            if (!links.isEmpty()) dao.insertLinks(links);
         });
 
         // Swap the photo folder for the restored photos.

@@ -26,8 +26,8 @@ android {
         applicationId "com.stockkeep.app"   // never change this, or updates won't install over the old app
         minSdk 26
         targetSdk 34
-        versionCode 2                       // increase by 1 for every new version you install
-        versionName "1.1.0"
+        versionCode 3                       // increase by 1 for every new version you install
+        versionName "1.2.0"
 
         javaCompileOptions {
             annotationProcessorOptions {

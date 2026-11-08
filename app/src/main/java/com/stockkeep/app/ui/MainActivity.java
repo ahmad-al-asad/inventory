@@ -42,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView emptyTitle;
     private TextView emptyText;
     private ExtendedFloatingActionButton fab;
+    private RecyclerView list;
+    private GridLayoutManager layoutManager;
+    private MaterialToolbar toolbar;
 
     private final ActivityResultLauncher<String> notificationPermission =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -62,10 +65,12 @@ public class MainActivity extends AppCompatActivity {
         setupToolbar();
         setupChips();
 
-        RecyclerView list = findViewById(R.id.list);
+        list = findViewById(R.id.list);
         adapter = new ItemAdapter(iwb -> startActivity(DetailActivity.intent(this, iwb.item.id)));
-        list.setLayoutManager(new GridLayoutManager(this, getResources().getInteger(R.integer.grid_columns)));
+        layoutManager = new GridLayoutManager(this, 1);
+        list.setLayoutManager(layoutManager);
         list.setAdapter(adapter);
+        applyViewMode(Prefs.viewMode(this));
         list.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
@@ -103,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupToolbar() {
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.main);
         MenuItem searchItem = toolbar.getMenu().findItem(R.id.action_search);
         SearchView search = (SearchView) searchItem.getActionView();
@@ -126,7 +131,10 @@ public class MainActivity extends AppCompatActivity {
         }
         toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.action_sort) {
+            if (id == R.id.action_view) {
+                showViewDialog();
+                return true;
+            } else if (id == R.id.action_sort) {
                 showSortDialog();
                 return true;
             } else if (id == R.id.action_settings) {
@@ -146,8 +154,51 @@ public class MainActivity extends AppCompatActivity {
             else if (id == R.id.chip_expired) f = MainViewModel.Filter.EXPIRED;
             else if (id == R.id.chip_opened) f = MainViewModel.Filter.OPENED;
             else if (id == R.id.chip_low) f = MainViewModel.Filter.LOW;
+            else if (id == R.id.chip_archived) f = MainViewModel.Filter.ARCHIVED;
             vm.setFilter(f);
         });
+    }
+
+    private void showViewDialog() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.view_as)
+                .setSingleChoiceItems(R.array.view_options, Prefs.viewMode(this), (d, which) -> {
+                    Prefs.setViewMode(this, which);
+                    applyViewMode(which);
+                    d.dismiss();
+                })
+                .show();
+    }
+
+    /** Switches between grid, small grid, list and compact list. Column counts grow on tablets. */
+    private void applyViewMode(int mode) {
+        int columnsRes;
+        int icon;
+        switch (mode) {
+            case ItemAdapter.VIEW_GRID_SMALL:
+                columnsRes = R.integer.grid_columns_small;
+                icon = R.drawable.ic_view_grid;
+                break;
+            case ItemAdapter.VIEW_LIST:
+            case ItemAdapter.VIEW_COMPACT:
+                columnsRes = R.integer.list_columns;
+                icon = R.drawable.ic_view_list;
+                break;
+            default:
+                columnsRes = R.integer.grid_columns;
+                icon = R.drawable.ic_view_grid;
+                break;
+        }
+        layoutManager.setSpanCount(getResources().getInteger(columnsRes));
+        adapter.setViewMode(mode);
+        list.setPadding(mode == ItemAdapter.VIEW_COMPACT ? 0 : dp(10), list.getPaddingTop(),
+                mode == ItemAdapter.VIEW_COMPACT ? 0 : dp(10), list.getPaddingBottom());
+        MenuItem viewItem = toolbar.getMenu().findItem(R.id.action_view);
+        if (viewItem != null) viewItem.setIcon(icon);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private void showSortDialog() {
@@ -165,7 +216,10 @@ public class MainActivity extends AppCompatActivity {
         boolean empty = items == null || items.isEmpty();
         emptyView.setVisibility(empty ? View.VISIBLE : View.GONE);
         if (empty) {
-            if (vm.hasAnyItems()) {
+            if (vm.getFilter() == MainViewModel.Filter.ARCHIVED) {
+                emptyTitle.setText(R.string.empty_archived_title);
+                emptyText.setText(R.string.empty_archived_text);
+            } else if (vm.hasAnyItems()) {
                 emptyTitle.setText(R.string.empty_filtered_title);
                 emptyText.setText(R.string.empty_filtered_text);
             } else {

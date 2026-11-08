@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.widget.ImageView;
@@ -49,15 +50,21 @@ final class UiUtil {
         }
     }
 
-    /** Shows the item's photo, or a neutral placeholder icon. */
+    /**
+     * Shows the item's photo inside its square frame. The whole photo is always visible (fit inside),
+     * with white around it if it isn't square. Without a photo, a neutral placeholder icon is shown.
+     */
     static void loadPhoto(@NonNull ImageView view, @Nullable String photo) {
         Context c = view.getContext();
         if (photo != null) {
             view.setImageTintList(null);
-            view.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            Glide.with(view).load(ImageStore.file(c, photo)).into(view);
+            view.setBackgroundColor(Color.WHITE);
+            view.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            Glide.with(view).load(ImageStore.file(c, photo)).fitCenter().into(view);
         } else {
             Glide.with(view).clear(view);
+            view.setBackgroundColor(MaterialColors.getColor(view,
+                    com.google.android.material.R.attr.colorSurfaceContainerHighest));
             view.setScaleType(ImageView.ScaleType.CENTER);
             view.setImageResource(R.drawable.ic_inventory_large);
             view.setImageTintList(ColorStateList.valueOf(

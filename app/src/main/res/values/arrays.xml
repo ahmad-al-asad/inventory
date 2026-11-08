@@ -64,4 +64,10 @@
         <item>300</item>
         <item>900</item>
     </string-array>
+    <string-array name="view_options">
+        <item>Grid</item>
+        <item>Small grid</item>
+        <item>List</item>
+        <item>Compact list</item>
+    </string-array>
 </resources>

@@ -16,6 +16,7 @@ public final class Prefs {
     public static final String KEY_APP_LOCK = "app_lock";
     public static final String KEY_LOCK_TIMEOUT = "lock_timeout";
     private static final String KEY_SORT = "sort";
+    private static final String KEY_VIEW_MODE = "view_mode";
     private static final String KEY_ASKED_NOTIF = "asked_notification_permission";
 
     private Prefs() {
@@ -60,6 +61,14 @@ public final class Prefs {
 
     public static void setSort(Context c, int sort) {
         sp(c).edit().putInt(KEY_SORT, sort).apply();
+    }
+
+    public static int viewMode(Context c) {
+        return sp(c).getInt(KEY_VIEW_MODE, 0);
+    }
+
+    public static void setViewMode(Context c, int mode) {
+        sp(c).edit().putInt(KEY_VIEW_MODE, mode).apply();
     }
 
     public static boolean askedNotificationPermission(Context c) {

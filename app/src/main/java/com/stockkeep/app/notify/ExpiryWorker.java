@@ -42,6 +42,7 @@ public class ExpiryWorker extends Worker {
         List<String> expired = new ArrayList<>();
         List<String> soon = new ArrayList<>();
         for (ItemWithBatches iwb : AppDatabase.get(c).dao().getAll()) {
+            if (iwb.item.archived) continue;
             Long date = Expiry.soonest(iwb);
             Expiry.Status s = Expiry.status(date, today, soonDays);
             if (s == Expiry.Status.EXPIRED) {

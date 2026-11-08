@@ -62,6 +62,18 @@ public interface ItemDao {
     @Query("DELETE FROM batches")
     void deleteAllBatches();
 
+    @Query("SELECT * FROM links WHERE itemId = :itemId ORDER BY position, id")
+    List<Link> getLinks(long itemId);
+
+    @Insert
+    void insertLinks(List<Link> links);
+
+    @Query("DELETE FROM links WHERE itemId = :itemId")
+    void deleteLinksFor(long itemId);
+
+    @Query("DELETE FROM links")
+    void deleteAllLinks();
+
     @Query("SELECT COALESCE(SUM(quantity), 0) FROM batches WHERE itemId = :itemId")
     int totalFor(long itemId);
 }

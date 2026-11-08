@@ -4,10 +4,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -26,6 +29,8 @@ import com.stockkeep.app.R;
 import com.stockkeep.app.data.Batch;
 import com.stockkeep.app.data.ImageStore;
 import com.stockkeep.app.data.Item;
+import com.stockkeep.app.data.ItemWithBatches;
+import com.stockkeep.app.data.Link;
 import com.stockkeep.app.data.Repository;
 import com.stockkeep.app.logic.DateUtil;
 import com.stockkeep.app.security.AppLock;
@@ -43,6 +48,8 @@ public class EditItemActivity extends AppCompatActivity {
     private static final String STATE_BOUGHT = "bought";
     private static final String STATE_EXPIRY = "expiry";
     private static final String STATE_OPENED = "opened";
+    private static final String STATE_LINK_LABELS = "link_labels";
+    private static final String STATE_LINK_URLS = "link_urls";
 
     public static Intent intent(@NonNull Context c, long itemId) {
         Intent i = new Intent(c, EditItemActivity.class);
@@ -59,16 +66,17 @@ public class EditItemActivity extends AppCompatActivity {
     private View photoHint;
     private MaterialButton btnRemovePhoto;
     private TextInputLayout tilName;
-    private TextInputLayout tilLink;
     private TextInputLayout tilQty;
     private EditText nameField;
-    private EditText linkField;
     private EditText qtyField;
     private EditText lifeAmountField;
     private MaterialAutoCompleteTextView unitField;
     private MaterialAutoCompleteTextView lifeUnitField;
     private MaterialSwitch notifyLow;
     private MaterialSwitch notifyOut;
+    private MaterialSwitch inUse;
+    private LinearLayout linksContainer;
+    private final List<View> linkRows = new ArrayList<>();
     private MaterialSwitch alreadyOpened;
     private DateField bought;
     private DateField expiry;
@@ -116,16 +124,20 @@ public class EditItemActivity extends AppCompatActivity {
         photoHint = findViewById(R.id.photo_hint);
         btnRemovePhoto = findViewById(R.id.btn_remove_photo);
         tilName = findViewById(R.id.til_name);
-        tilLink = findViewById(R.id.til_link);
         tilQty = findViewById(R.id.til_qty);
         nameField = findViewById(R.id.name);
-        linkField = findViewById(R.id.link);
         qtyField = findViewById(R.id.qty);
         lifeAmountField = findViewById(R.id.life_amount);
         unitField = findViewById(R.id.unit);
         lifeUnitField = findViewById(R.id.life_unit);
         notifyLow = findViewById(R.id.notify_low);
         notifyOut = findViewById(R.id.notify_out);
+        inUse = findViewById(R.id.in_use);
+        linksContainer = findViewById(R.id.links_container);
+        findViewById(R.id.btn_add_link).setOnClickListener(v -> {
+            View row = addLinkRow(null, null);
+            row.findViewById(R.id.link_url).requestFocus();
+        });
         alreadyOpened = findViewById(R.id.already_opened);
         tilOpened = findViewById(R.id.til_opened);
         bought = new DateField(findViewById(R.id.til_bought), getSupportFragmentManager(), getString(R.string.date_bought));
@@ -163,7 +175,13 @@ public class EditItemActivity extends AppCompatActivity {
             bought.set(getLongOrNull(savedInstanceState, STATE_BOUGHT));
             expiry.set(getLongOrNull(savedInstanceState, STATE_EXPIRY));
             openedOn.set(getLongOrNull(savedInstanceState, STATE_OPENED));
+            ArrayList<String> labels = savedInstanceState.getStringArrayList(STATE_LINK_LABELS);
+            ArrayList<String> urls = savedInstanceState.getStringArrayList(STATE_LINK_URLS);
+            if (labels != null && urls != null) {
+                for (int i = 0; i < urls.size(); i++) addLinkRow(labels.get(i), urls.get(i));
+            }
         } else if (!isEdit) {
+            addLinkRow(null, null);
             qtyField.setText("1");
             bought.set(DateUtil.today());
             openedOn.set(DateUtil.today());
@@ -179,15 +197,18 @@ public class EditItemActivity extends AppCompatActivity {
                     return;
                 }
                 editing = iwb.item;
-                if (savedInstanceState == null) fill(iwb.item, lifeUnits);
+                if (savedInstanceState == null) fill(iwb, lifeUnits);
             });
         }
     }
 
-    private void fill(Item item, String[] lifeUnits) {
+    private void fill(ItemWithBatches iwb, String[] lifeUnits) {
+        Item item = iwb.item;
         nameField.setText(item.name);
         unitField.setText(item.unit == null ? "" : item.unit, false);
-        linkField.setText(item.buyLink == null ? "" : item.buyLink);
+        for (Link l : iwb.sortedLinks()) addLinkRow(l.label, l.url);
+        if (linkRows.isEmpty()) addLinkRow(null, null);
+        inUse.setChecked(!item.archived);
         lifeAmountField.setText(item.openLifeAmount == null ? "" : String.valueOf(item.openLifeAmount));
         lifeUnitIndex = Math.max(0, Math.min(lifeUnits.length - 1, item.openLifeUnit));
         lifeUnitField.setText(lifeUnits[lifeUnitIndex], false);
@@ -196,6 +217,33 @@ public class EditItemActivity extends AppCompatActivity {
         photoName = item.photo;
         originalPhoto = item.photo;
         showPhoto();
+    }
+
+    /** Adds one editable shop row (name + link) to the "Where to buy" list. */
+    private View addLinkRow(@Nullable String label, @Nullable String url) {
+        View row = LayoutInflater.from(this).inflate(R.layout.item_link_edit, linksContainer, false);
+        ((EditText) row.findViewById(R.id.link_label)).setText(label == null ? "" : label);
+        ((EditText) row.findViewById(R.id.link_url)).setText(url == null ? "" : url);
+        row.findViewById(R.id.btn_remove_link).setOnClickListener(v -> {
+            linksContainer.removeView(row);
+            linkRows.remove(row);
+            renumberLinks();
+        });
+        linksContainer.addView(row);
+        linkRows.add(row);
+        renumberLinks();
+        return row;
+    }
+
+    private void renumberLinks() {
+        for (int i = 0; i < linkRows.size(); i++) {
+            ((TextView) linkRows.get(i).findViewById(R.id.link_number)).setText(getString(R.string.shop_n, i + 1));
+        }
+    }
+
+    private static String text(View row, int id) {
+        CharSequence t = ((EditText) row.findViewById(id)).getText();
+        return t == null ? "" : t.toString().trim();
     }
 
     private void launchGallery() {
@@ -244,6 +292,7 @@ public class EditItemActivity extends AppCompatActivity {
         } else {
             com.bumptech.glide.Glide.with(photoView).clear(photoView);
             photoView.setImageDrawable(null);
+            photoView.setBackground(null);
         }
     }
 
@@ -258,18 +307,35 @@ public class EditItemActivity extends AppCompatActivity {
         }
         tilName.setError(null);
 
-        String link = UiUtil.normalizeLink(linkField.getText() == null ? null : linkField.getText().toString());
-        if (link != null && !UiUtil.isValidLink(link)) {
-            tilLink.setError(getString(R.string.err_link));
-            return;
+        List<Link> links = new ArrayList<>();
+        for (View row : linkRows) {
+            TextInputLayout tilUrl = row.findViewById(R.id.til_link_url);
+            String label = text(row, R.id.link_label);
+            String url = UiUtil.normalizeLink(text(row, R.id.link_url));
+            if (url == null) {
+                tilUrl.setError(label.isEmpty() ? null : getString(R.string.err_link_missing));
+                if (label.isEmpty()) continue; // completely empty row: just ignore it
+                row.findViewById(R.id.link_url).requestFocus();
+                return;
+            }
+            if (!UiUtil.isValidLink(url)) {
+                tilUrl.setError(getString(R.string.err_link));
+                row.findViewById(R.id.link_url).requestFocus();
+                return;
+            }
+            tilUrl.setError(null);
+            Link l = new Link();
+            l.label = label.isEmpty() ? null : label;
+            l.url = url;
+            links.add(l);
         }
-        tilLink.setError(null);
 
         Item item = editing != null ? editing : new Item();
         item.name = name;
         String unit = unitField.getText() == null ? "" : unitField.getText().toString().trim();
         item.unit = unit.isEmpty() ? null : unit;
-        item.buyLink = link;
+        item.buyLink = null;
+        item.archived = !inUse.isChecked();
         int lifeAmount = UiUtil.parseInt(lifeAmountField.getText(), 0);
         item.openLifeAmount = lifeAmount > 0 ? lifeAmount : null;
         item.openLifeUnit = lifeUnitIndex;
@@ -278,7 +344,7 @@ public class EditItemActivity extends AppCompatActivity {
         item.photo = photoName;
 
         if (editing != null) {
-            repo.updateItem(item);
+            repo.updateItem(item, links);
         } else {
             int qty = UiUtil.parseInt(qtyField.getText(), -1);
             if (qty < 0) {
@@ -303,7 +369,7 @@ public class EditItemActivity extends AppCompatActivity {
                 }
                 batches.add(sealed);
             }
-            repo.createItem(item, batches, null);
+            repo.createItem(item, batches, links, null);
         }
 
         saved = true;
@@ -327,6 +393,14 @@ public class EditItemActivity extends AppCompatActivity {
         putLongOrNull(out, STATE_BOUGHT, bought.get());
         putLongOrNull(out, STATE_EXPIRY, expiry.get());
         putLongOrNull(out, STATE_OPENED, openedOn.get());
+        ArrayList<String> labels = new ArrayList<>();
+        ArrayList<String> urls = new ArrayList<>();
+        for (View row : linkRows) {
+            labels.add(text(row, R.id.link_label));
+            urls.add(text(row, R.id.link_url));
+        }
+        out.putStringArrayList(STATE_LINK_LABELS, labels);
+        out.putStringArrayList(STATE_LINK_URLS, urls);
     }
 
     @Override
