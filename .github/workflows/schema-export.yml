@@ -1,7 +1,8 @@
 name: Export Room schemas (temporary)
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [v1.2.0]
 
 permissions:
   contents: write
