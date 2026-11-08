@@ -10,6 +10,8 @@ Java · Material 3 · Room (SQLite) · Android 8.0+ · no internet or account ne
 2. Tap **StockKeep-x.y.z.apk** to download it, then open it.
 3. If Android asks, allow your browser to "install unknown apps", then tap **Install**.
 
+Optional **app lock** (Settings → Security) uses your phone's fingerprint, face or PIN.
+
 Everything you add stays on your own phone. The app has no internet permission and no account, so nothing is shared with anyone, including the developer.
 
 ## Build it yourself

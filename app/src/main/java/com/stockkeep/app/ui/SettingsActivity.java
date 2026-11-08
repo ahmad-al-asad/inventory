@@ -1,19 +1,26 @@
 package com.stockkeep.app.ui;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.SwitchPreferenceCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -22,6 +29,7 @@ import com.stockkeep.app.Prefs;
 import com.stockkeep.app.R;
 import com.stockkeep.app.data.BackupManager;
 import com.stockkeep.app.data.Repository;
+import com.stockkeep.app.security.AppLock;
 
 import java.time.LocalDate;
 
@@ -52,9 +60,13 @@ public class SettingsActivity extends AppCompatActivity {
                     if (uri != null) confirmImport(uri);
                 });
 
+        private SwitchPreferenceCompat lockSwitch;
+        private BiometricPrompt enablePrompt;
+
         @Override
         public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
             setPreferencesFromResource(R.xml.preferences, rootKey);
+            setupAppLock();
 
             ListPreference theme = findPreference(Prefs.KEY_THEME);
             if (theme != null) {
@@ -66,6 +78,7 @@ public class SettingsActivity extends AppCompatActivity {
             Preference export = findPreference(Prefs.KEY_EXPORT);
             if (export != null) {
                 export.setOnPreferenceClickListener(p -> {
+                    AppLock.openingPicker();
                     exportLauncher.launch("StockKeep-backup-" + LocalDate.now() + ".zip");
                     return true;
                 });
@@ -73,6 +86,7 @@ public class SettingsActivity extends AppCompatActivity {
             Preference restore = findPreference(Prefs.KEY_IMPORT);
             if (restore != null) {
                 restore.setOnPreferenceClickListener(p -> {
+                    AppLock.openingPicker();
                     importLauncher.launch(new String[]{"application/zip", "application/x-zip-compressed",
                             "application/octet-stream"});
                     return true;
@@ -82,6 +96,50 @@ public class SettingsActivity extends AppCompatActivity {
             if (version != null) {
                 version.setSummary(getString(R.string.version_summary, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE));
             }
+        }
+
+        private void setupAppLock() {
+            lockSwitch = findPreference(Prefs.KEY_APP_LOCK);
+            if (lockSwitch == null) return;
+            enablePrompt = new BiometricPrompt(this, ContextCompat.getMainExecutor(requireContext()),
+                    new BiometricPrompt.AuthenticationCallback() {
+                        @Override
+                        public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult r) {
+                            lockSwitch.setChecked(true);
+                            AppLock.get().markUnlocked();
+                            Toast.makeText(requireContext(), R.string.lock_enabled, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+            lockSwitch.setOnPreferenceChangeListener((p, value) -> {
+                if (!Boolean.TRUE.equals(value)) return true; // turning it off needs no extra check
+                if (!AppLock.isAvailable(requireContext())) {
+                    showNoScreenLockDialog();
+                    return false;
+                }
+                // Only turn it on after the user proves the unlock works, so they can't lock themselves out.
+                enablePrompt.authenticate(new BiometricPrompt.PromptInfo.Builder()
+                        .setTitle(getString(R.string.lock_enable_title))
+                        .setSubtitle(getString(R.string.lock_enable_subtitle))
+                        .setAllowedAuthenticators(AppLock.AUTHENTICATORS)
+                        .setConfirmationRequired(false)
+                        .build());
+                return false;
+            });
+        }
+
+        private void showNoScreenLockDialog() {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.lock_no_screen_lock_title)
+                    .setMessage(R.string.lock_no_screen_lock_text)
+                    .setPositiveButton(R.string.lock_open_settings, (d, w) -> {
+                        try {
+                            startActivity(new Intent(Settings.ACTION_SECURITY_SETTINGS));
+                        } catch (ActivityNotFoundException e) {
+                            startActivity(new Intent(Settings.ACTION_SETTINGS));
+                        }
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
         }
 
         private void runExport(Uri uri) {

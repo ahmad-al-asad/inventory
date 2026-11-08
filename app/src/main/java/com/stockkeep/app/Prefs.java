@@ -13,6 +13,8 @@ public final class Prefs {
     public static final String KEY_EXPORT = "export";
     public static final String KEY_IMPORT = "import";
     public static final String KEY_VERSION = "version";
+    public static final String KEY_APP_LOCK = "app_lock";
+    public static final String KEY_LOCK_TIMEOUT = "lock_timeout";
     private static final String KEY_SORT = "sort";
     private static final String KEY_ASKED_NOTIF = "asked_notification_permission";
 
@@ -33,6 +35,23 @@ public final class Prefs {
 
     public static boolean expiryNotifications(Context c) {
         return sp(c).getBoolean(KEY_EXPIRY_NOTIF, true);
+    }
+
+    public static boolean appLock(Context c) {
+        return sp(c).getBoolean(KEY_APP_LOCK, false);
+    }
+
+    public static void setAppLock(Context c, boolean on) {
+        sp(c).edit().putBoolean(KEY_APP_LOCK, on).apply();
+    }
+
+    /** How long the app may stay in the background before asking again. */
+    public static long lockTimeoutMs(Context c) {
+        try {
+            return Long.parseLong(sp(c).getString(KEY_LOCK_TIMEOUT, "0")) * 1000L;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     public static int sort(Context c) {

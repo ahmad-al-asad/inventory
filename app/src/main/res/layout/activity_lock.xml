@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <FrameLayout
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:background="@drawable/bg_badge"
+        android:backgroundTint="?attr/colorPrimaryContainer">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_lock"
+            app:tint="?attr/colorOnPrimaryContainer" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:text="@string/lock_title"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+    <TextView
+        android:id="@+id/lock_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:text="@string/lock_text"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_unlock"
+        android:layout_width="wrap_content"
+        android:layout_height="56dp"
+        android:layout_marginTop="32dp"
+        android:minWidth="200dp"
+        android:text="@string/lock_unlock"
+        app:icon="@drawable/ic_fingerprint" />
+</LinearLayout>

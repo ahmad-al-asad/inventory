@@ -128,7 +128,25 @@
         <item quantity="other">%1$d items expire soon</item>
     </plurals>
 
+    <!-- App lock -->
+    <string name="lock_title">StockKeep is locked</string>
+    <string name="lock_text">Use your fingerprint, face or phone PIN to open.</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_prompt_title">Unlock StockKeep</string>
+    <string name="lock_prompt_subtitle">Fingerprint, face or your phone\'s screen lock</string>
+    <string name="lock_enable_title">Turn on app lock</string>
+    <string name="lock_enable_subtitle">Confirm it\'s you to turn this on</string>
+    <string name="lock_enabled">App lock is on</string>
+    <string name="lock_no_screen_lock_title">Set up a screen lock first</string>
+    <string name="lock_no_screen_lock_text">App lock uses your phone\'s fingerprint, face or PIN. Add one in your phone\'s Settings → Security, then try again.</string>
+    <string name="lock_open_settings">Open phone settings</string>
+    <string name="lock_turned_off_no_screen_lock">Your phone no longer has a screen lock, so app lock was turned off</string>
+
     <!-- Settings -->
+    <string name="pref_cat_security">Security</string>
+    <string name="pref_app_lock">App lock</string>
+    <string name="pref_app_lock_summary">Ask for fingerprint, face or phone PIN to open the app</string>
+    <string name="pref_lock_timeout">Lock again</string>
     <string name="pref_cat_expiry">Expiry</string>
     <string name="pref_soon_days">Count as \"expiring soon\"</string>
     <string name="pref_expiry_notif">Daily expiry reminder</string>

@@ -28,6 +28,7 @@ import com.stockkeep.app.data.ImageStore;
 import com.stockkeep.app.data.Item;
 import com.stockkeep.app.data.Repository;
 import com.stockkeep.app.logic.DateUtil;
+import com.stockkeep.app.security.AppLock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -198,6 +199,7 @@ public class EditItemActivity extends AppCompatActivity {
     }
 
     private void launchGallery() {
+        AppLock.openingPicker();
         pickPhoto.launch(new PickVisualMediaRequest.Builder()
                 .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
                 .build());
@@ -206,6 +208,7 @@ public class EditItemActivity extends AppCompatActivity {
     private void launchCamera() {
         try {
             cameraUri = ImageStore.newCameraUri(this);
+            AppLock.openingPicker();
             takePhoto.launch(cameraUri);
         } catch (Exception e) {
             Toast.makeText(this, R.string.camera_unavailable, Toast.LENGTH_SHORT).show();

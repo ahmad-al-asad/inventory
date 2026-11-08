@@ -5,6 +5,7 @@ import android.app.Application;
 import com.google.android.material.color.DynamicColors;
 import com.stockkeep.app.notify.ExpiryWorker;
 import com.stockkeep.app.notify.Notifier;
+import com.stockkeep.app.security.AppLock;
 
 public class StockKeepApp extends Application {
     @Override
@@ -15,5 +16,6 @@ public class StockKeepApp extends Application {
         DynamicColors.applyToActivitiesIfAvailable(this);
         Notifier.createChannels(this);
         ExpiryWorker.schedule(this);
+        AppLock.install(this);
     }
 }
