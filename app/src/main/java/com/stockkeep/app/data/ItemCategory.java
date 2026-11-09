@@ -2,6 +2,7 @@ package com.stockkeep.app.data;
 
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Ignore;
 import androidx.room.Index;
 
 /** "This item is in this folder." One row per item per folder. */
@@ -20,6 +21,7 @@ public class ItemCategory {
     public ItemCategory() {
     }
 
+    @Ignore
     public ItemCategory(long itemId, long categoryId) {
         this.itemId = itemId;
         this.categoryId = categoryId;

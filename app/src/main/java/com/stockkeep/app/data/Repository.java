@@ -100,6 +100,13 @@ public class Repository {
         }));
     }
 
+    public void load(long id, @NonNull Consumer<ItemWithBatches> callback) {
+        io.execute(() -> {
+            ItemWithBatches result = dao.get(id);
+            main.post(() -> callback.accept(result));
+        });
+    }
+
     // ---------- folder membership ----------
 
     /** Puts items exactly in these folders (none = Default folder). */
