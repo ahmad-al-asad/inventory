@@ -130,32 +130,32 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="@string/hint_display_name"
-                app:helperText="@string/helper_display_name">
+                android:hint="@string/hint_product_name"
+                app:helperText="@string/helper_product_name">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapSentences"
-                    android:maxLines="1" />
+                    android:inputType="textCapWords|textMultiLine"
+                    android:maxLines="3" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/til_product_name"
+                android:id="@+id/til_display_name"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="@string/hint_product_name"
-                app:helperText="@string/helper_product_name">
+                android:hint="@string/hint_display_name"
+                app:helperText="@string/helper_display_name">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/product_name"
+                    android:id="@+id/display_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapWords|textMultiLine"
-                    android:maxLines="3" />
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout

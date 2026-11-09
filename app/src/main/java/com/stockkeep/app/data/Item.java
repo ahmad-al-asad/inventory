@@ -17,13 +17,17 @@ public class Item {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
-    /** Display name: short name shown everywhere in the app, e.g. "Olive oil". */
+    /** Product name: the actual name, e.g. "Kirkland Extra Virgin Olive Oil 2 L". Always set. */
     @NonNull
     public String name = "";
 
-    /** Actual product name as on the package, e.g. "Kirkland Extra Virgin Olive Oil 2 L". Optional. */
+    /**
+     * Optional shorter name to show in the app, e.g. "Olive oil". When empty, the product name is shown.
+     * (Stored in the column that app 1.3.0 called "productName"; migration 3 -> 4 sorted the values out.)
+     */
+    @ColumnInfo(name = "productName")
     @Nullable
-    public String productName;
+    public String displayName;
 
     /** Folder this item is in, or null for none. */
     @Nullable
@@ -62,6 +66,17 @@ public class Item {
     @ColumnInfo(defaultValue = "0")
     public boolean archived;
 
+    /** The name to show: the display name if there is one, otherwise the product name. */
+    @NonNull
+    public String title() {
+        return displayName != null && !displayName.trim().isEmpty() ? displayName.trim() : name;
+    }
+
+    /** True when a separate display name is set (so the product name is worth showing too). */
+    public boolean hasDisplayName() {
+        return displayName != null && !displayName.trim().isEmpty() && !displayName.trim().equals(name);
+    }
+
     /** Open life converted to days, or null if not set. */
     @Nullable
     public Integer openLifeDays() {
@@ -78,7 +93,7 @@ public class Item {
 
     @NonNull
     public String contentKey() {
-        return id + "|" + name + "|" + productName + "|" + categoryId + "|" + photo + "|" + unit + "|" + openLifeAmount + "|"
+        return id + "|" + name + "|" + displayName + "|" + categoryId + "|" + photo + "|" + unit + "|" + openLifeAmount + "|"
                 + openLifeUnit + "|" + notifyLow + "|" + notifyOut + "|" + archived;
     }
 }

@@ -46,9 +46,9 @@ public class ExpiryWorker extends Worker {
             Long date = Expiry.soonest(iwb);
             Expiry.Status s = Expiry.status(date, today, soonDays);
             if (s == Expiry.Status.EXPIRED) {
-                expired.add(iwb.item.name);
+                expired.add(iwb.item.title());
             } else if (s == Expiry.Status.SOON) {
-                soon.add(c.getString(R.string.notif_line_soon, iwb.item.name, DateUtil.relative(c, date, today)));
+                soon.add(c.getString(R.string.notif_line_soon, iwb.item.title(), DateUtil.relative(c, date, today)));
             }
         }
         Notifier.showExpiry(c, expired, soon);

@@ -179,10 +179,12 @@ public class DetailActivity extends AppCompatActivity {
         int sealed = count - opened;
         String unit = TextUtils.isEmpty(iwb.item.unit) ? "" : " " + iwb.item.unit;
 
-        name.setText(iwb.item.name);
-        boolean hasProduct = !TextUtils.isEmpty(iwb.item.productName) && !iwb.item.productName.equals(iwb.item.name);
-        productName.setVisibility(hasProduct ? View.VISIBLE : View.GONE);
-        productName.setText(hasProduct ? iwb.item.productName : "");
+        // Big title: display name if set, otherwise the product name. Underneath: the product name,
+        // but only when a separate display name is shown above it.
+        name.setText(iwb.item.title());
+        boolean showProduct = iwb.item.hasDisplayName();
+        productName.setVisibility(showProduct ? View.VISIBLE : View.GONE);
+        productName.setText(showProduct ? iwb.item.name : "");
         String folderName = iwb.item.categoryId == null ? null : folderNames.get(iwb.item.categoryId);
         folder.setVisibility(folderName == null ? View.GONE : View.VISIBLE);
         folder.setText(folderName);
@@ -264,7 +266,7 @@ public class DetailActivity extends AppCompatActivity {
     private void confirmDelete() {
         if (current == null) return;
         new MaterialAlertDialogBuilder(this)
-                .setTitle(getString(R.string.delete_item_title, current.item.name))
+                .setTitle(getString(R.string.delete_item_title, current.item.title()))
                 .setMessage(R.string.delete_item_text)
                 .setPositiveButton(R.string.delete, (d, w) -> {
                     String photoName = current.item.photo;

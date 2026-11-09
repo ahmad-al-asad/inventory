@@ -122,7 +122,7 @@
     <string name="date_opened">Date opened</string>
     <string name="clear_date">Clear date</string>
     <string name="already_opened">One of these is already opened</string>
-    <string name="err_name">Please enter a name</string>
+    <string name="err_name">Please enter the product name</string>
     <string name="err_link">This doesn\'t look like a web link</string>
     <string name="err_quantity_zero">Enter 0 or more</string>
 
@@ -201,9 +201,9 @@
     <string name="qty_opened_none_sealed">%1$d opened · none left sealed</string>
     <string name="none_sealed">None left sealed</string>
     <string name="qty_short_opened">%1$d · %2$d open</string>
-    <string name="hint_display_name">Display name *</string>
-    <string name="helper_display_name">Short name shown in the app, e.g. Olive oil</string>
-    <string name="hint_product_name">Product name (optional)</string>
+    <string name="hint_display_name">Display name (optional)</string>
+    <string name="helper_display_name">Shorter name to show in the app, e.g. Olive oil. Leave empty to show the product name.</string>
+    <string name="hint_product_name">Product name *</string>
     <string name="helper_product_name">Full name as on the package, e.g. Kirkland Extra Virgin Olive Oil 2 L</string>
     <string name="hint_folder">Folder</string>
     <string name="no_folder">No folder</string>

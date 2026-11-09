@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
  * Never use fallbackToDestructiveMigration(): it would wipe the user's inventory.
  * The layout of every version is saved in app/schemas/ for reference.
  */
-@Database(entities = {Item.class, Batch.class, Link.class, Category.class}, version = 3, exportSchema = true)
+@Database(entities = {Item.class, Batch.class, Link.class, Category.class}, version = 4, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ItemDao dao();
@@ -49,6 +49,22 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * v3 -> v4 (app 1.3.1): no layout change. 1.3.0 put existing names into the display name; they are
+     * really product names. Afterwards "name" = product name and "productName" column = optional display name.
+     *  - Only one name: it stays as the product name, display name empty.
+     *  - Both names typed in 1.3.0 (display in "name", product in "productName"): swapped into place.
+     */
+    static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("UPDATE `items` SET `name` = `productName`, `productName` = `name` "
+                    + "WHERE `productName` IS NOT NULL AND TRIM(`productName`) != '' AND `productName` != `name`");
+            db.execSQL("UPDATE `items` SET `productName` = NULL "
+                    + "WHERE `productName` IS NOT NULL AND (TRIM(`productName`) = '' OR `productName` = `name`)");
+        }
+    };
+
     private static volatile AppDatabase instance;
 
     @NonNull
@@ -58,7 +74,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (instance == null) {
                     instance = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "stockkeep.db")
-                            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                             .build();
                 }
             }

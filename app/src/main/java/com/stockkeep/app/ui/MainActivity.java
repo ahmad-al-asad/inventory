@@ -329,7 +329,7 @@ public class MainActivity extends AppCompatActivity {
     private void deleteWithUndo(ItemWithBatches iwb) {
         Repository repo = Repository.get(this);
         repo.deleteItem(iwb.item);
-        Snackbar.make(root, getString(R.string.item_deleted, iwb.item.name), Snackbar.LENGTH_LONG)
+        Snackbar.make(root, getString(R.string.item_deleted, iwb.item.title()), Snackbar.LENGTH_LONG)
                 .setAnchorView(fab)
                 .setAction(R.string.undo, v -> repo.restore(iwb))
                 .addCallback(new Snackbar.Callback() {

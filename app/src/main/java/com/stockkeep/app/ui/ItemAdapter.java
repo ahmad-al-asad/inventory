@@ -108,7 +108,7 @@ public class ItemAdapter extends ListAdapter<ItemWithBatches, ItemAdapter.Holder
         boolean compact = h.viewType == VIEW_COMPACT || h.viewType == VIEW_GRID_SMALL;
         String unit = item.unit == null || item.unit.isEmpty() ? "" : " " + item.unit;
 
-        h.name.setText(item.name);
+        h.name.setText(item.title());
         UiUtil.loadPhoto(h.photo, item.photo);
 
         // "In stock" counts sealed units; opened ones are shown separately.
@@ -149,7 +149,7 @@ public class ItemAdapter extends ListAdapter<ItemWithBatches, ItemAdapter.Holder
         // Archived items are shown faded so they stand out from things in use.
         h.itemView.setAlpha(item.archived ? 0.6f : 1f);
 
-        CharSequence desc = item.name + ", " + h.quantity.getText()
+        CharSequence desc = item.title() + ", " + h.quantity.getText()
                 + (item.archived ? ", " + c.getString(R.string.badge_archived) : "");
         h.itemView.setContentDescription(desc);
         h.itemView.setOnClickListener(v -> onClick.onClick(iwb));

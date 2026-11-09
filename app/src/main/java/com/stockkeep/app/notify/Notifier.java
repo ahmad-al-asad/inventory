@@ -51,9 +51,9 @@ public final class Notifier {
                                       int before, int after) {
         if (after == before || item.archived) return;
         if (after == 0 && before > 0 && item.notifyOut) {
-            postStock(c, item, links, c.getString(R.string.notif_out_title, item.name), c.getString(R.string.notif_out_text));
+            postStock(c, item, links, c.getString(R.string.notif_out_title, item.title()), c.getString(R.string.notif_out_text));
         } else if (after == 1 && before > 1 && item.notifyLow) {
-            postStock(c, item, links, c.getString(R.string.notif_low_title, item.name), c.getString(R.string.notif_low_text));
+            postStock(c, item, links, c.getString(R.string.notif_low_title, item.title()), c.getString(R.string.notif_low_text));
         }
     }
 

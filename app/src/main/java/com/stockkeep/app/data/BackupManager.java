@@ -33,7 +33,7 @@ import java.util.zip.ZipOutputStream;
  */
 public final class BackupManager {
     private static final String FORMAT = "stockkeep-backup";
-    private static final int FORMAT_VERSION = 3; // 2 = links + archived (1.2.0), 3 = product name + folders (1.3.0)
+    private static final int FORMAT_VERSION = 4; // 2 = links + archived (1.2.0), 3 = folders (1.3.0), 4 = name = product name + displayName (1.3.1)
     private static final String DATA_ENTRY = "data.json";
     private static final String PHOTO_PREFIX = "photos/";
 
@@ -50,7 +50,7 @@ public final class BackupManager {
             JSONObject o = new JSONObject();
             o.put("id", it.id);
             o.put("name", it.name);
-            o.put("productName", it.productName == null ? JSONObject.NULL : it.productName);
+            o.put("displayName", it.displayName == null ? JSONObject.NULL : it.displayName);
             o.put("categoryId", it.categoryId == null ? JSONObject.NULL : it.categoryId);
             o.put("photo", it.photo == null ? JSONObject.NULL : it.photo);
             o.put("unit", it.unit == null ? JSONObject.NULL : it.unit);
@@ -152,6 +152,7 @@ public final class BackupManager {
 
         JSONObject root = new JSONObject(json);
         if (!FORMAT.equals(root.optString("format"))) throw new IOException("This file is not a StockKeep backup");
+        int version = root.optInt("version", 1);
 
         List<Item> items = new ArrayList<>();
         List<Batch> batches = new ArrayList<>();
@@ -174,7 +175,16 @@ public final class BackupManager {
             Item it = new Item();
             it.id = o.getLong("id");
             it.name = o.getString("name");
-            it.productName = optString(o, "productName");
+            if (version >= 4) {
+                it.displayName = optString(o, "displayName");
+            } else {
+                // Backups from 1.3.0 had "name" = display name and "productName" = product name.
+                String product = optString(o, "productName");
+                if (product != null && !product.trim().isEmpty() && !product.equals(it.name)) {
+                    it.displayName = it.name;
+                    it.name = product;
+                }
+            }
             it.categoryId = optLong(o, "categoryId");
             it.photo = optString(o, "photo");
             it.unit = optString(o, "unit");

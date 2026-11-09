@@ -90,7 +90,7 @@ public class MainViewModel extends AndroidViewModel {
     /** Search looks at both the display name and the product name. */
     private static boolean matches(Item item, String q) {
         if (item.name.toLowerCase(Locale.ROOT).contains(q)) return true;
-        return item.productName != null && item.productName.toLowerCase(Locale.ROOT).contains(q);
+        return item.displayName != null && item.displayName.toLowerCase(Locale.ROOT).contains(q);
     }
 
     public void setFilter(Filter f) {
@@ -154,7 +154,7 @@ public class MainViewModel extends AndroidViewModel {
             out.add(iwb);
         }
 
-        Comparator<ItemWithBatches> byName = (a, b) -> a.item.name.compareToIgnoreCase(b.item.name);
+        Comparator<ItemWithBatches> byName = (a, b) -> a.item.title().compareToIgnoreCase(b.item.title());
         Comparator<ItemWithBatches> cmp;
         switch (sort) {
             case SORT_NAME:

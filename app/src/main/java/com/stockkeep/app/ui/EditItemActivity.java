@@ -78,7 +78,7 @@ public class EditItemActivity extends AppCompatActivity {
     private TextInputLayout tilName;
     private TextInputLayout tilQty;
     private EditText nameField;
-    private EditText productNameField;
+    private EditText displayNameField;
     private MaterialAutoCompleteTextView folderField;
     private final List<Category> folders = new ArrayList<>();
     @Nullable
@@ -141,7 +141,7 @@ public class EditItemActivity extends AppCompatActivity {
         tilName = findViewById(R.id.til_name);
         tilQty = findViewById(R.id.til_qty);
         nameField = findViewById(R.id.name);
-        productNameField = findViewById(R.id.product_name);
+        displayNameField = findViewById(R.id.display_name);
         folderField = findViewById(R.id.folder);
         folderField.setOnItemClickListener((parent, view, position, id) -> onFolderPicked(position));
         repo.observeCategories().observe(this, cats -> {
@@ -231,7 +231,7 @@ public class EditItemActivity extends AppCompatActivity {
     private void fill(ItemWithBatches iwb, String[] lifeUnits) {
         Item item = iwb.item;
         nameField.setText(item.name);
-        productNameField.setText(item.productName == null ? "" : item.productName);
+        displayNameField.setText(item.displayName == null ? "" : item.displayName);
         folderId = item.categoryId;
         showFolders();
         unitField.setText(item.unit == null ? "" : item.unit, false);
@@ -358,11 +358,14 @@ public class EditItemActivity extends AppCompatActivity {
     private void save() {
         if (itemId > 0 && editing == null) return; // still loading
 
+        // "name" is the product name (required); the display name is optional and shown instead if set.
         String name = nameField.getText() == null ? "" : nameField.getText().toString().trim();
-        String product = productNameField.getText() == null ? "" : productNameField.getText().toString().trim();
-        if (name.isEmpty() && !product.isEmpty()) {
-            name = product; // only the product name was given: show that
+        String display = displayNameField.getText() == null ? "" : displayNameField.getText().toString().trim();
+        if (name.isEmpty() && !display.isEmpty()) {
+            name = display; // only a display name was typed: use it as the product name
+            display = "";
             nameField.setText(name);
+            displayNameField.setText("");
         }
         if (name.isEmpty()) {
             tilName.setError(getString(R.string.err_name));
@@ -396,7 +399,7 @@ public class EditItemActivity extends AppCompatActivity {
 
         Item item = editing != null ? editing : new Item();
         item.name = name;
-        item.productName = product.isEmpty() ? null : product;
+        item.displayName = display.isEmpty() || display.equals(name) ? null : display;
         item.categoryId = folderId;
         String unit = unitField.getText() == null ? "" : unitField.getText().toString().trim();
         item.unit = unit.isEmpty() ? null : unit;
