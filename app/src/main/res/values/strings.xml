@@ -27,7 +27,6 @@
     <!-- Quantities and badges -->
     <string name="out_of_stock">Out of stock</string>
     <string name="qty_in_stock">%1$d%2$s in stock</string>
-    <string name="qty_last">Only 1 left</string>
     <string name="n_opened">%1$d opened</string>
     <string name="badge_out">Out</string>
     <string name="badge_archived">Archived</string>
@@ -50,8 +49,6 @@
     <string name="back">Back</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
-    <string name="use_one">Use one</string>
-    <string name="archive">Archive (no longer used)</string>
     <string name="mark_in_use">Mark as in use</string>
     <string name="archived_banner">Archived: no longer used, kept for your records.</string>
     <string name="archived_done">Archived. It\'s now under the Archived filter.</string>
@@ -100,7 +97,6 @@
     <string name="remove">Remove</string>
     <string name="camera_unavailable">Camera not available</string>
     <string name="photo_failed">Couldn\'t load that photo</string>
-    <string name="hint_name">Name *</string>
     <string name="hint_unit">Unit (optional)</string>
     <string name="helper_unit">e.g. bottles, packs, ml</string>
     <string name="hint_link">Link</string>
@@ -197,4 +193,32 @@
         <item quantity="one">Restored %1$d item</item>
         <item quantity="other">Restored %1$d items</item>
     </plurals>
+
+    <!-- 1.3.0: opening, names, folders -->
+    <string name="used_up_one">Used up one</string>
+    <string name="in_use_detail">In use (turn off to archive)</string>
+    <string name="qty_in_stock_and_opened">%1$d%2$s in stock · %3$d opened</string>
+    <string name="qty_opened_none_sealed">%1$d opened · none left sealed</string>
+    <string name="none_sealed">None left sealed</string>
+    <string name="qty_short_opened">%1$d · %2$d open</string>
+    <string name="hint_display_name">Display name *</string>
+    <string name="helper_display_name">Short name shown in the app, e.g. Olive oil</string>
+    <string name="hint_product_name">Product name (optional)</string>
+    <string name="helper_product_name">Full name as on the package, e.g. Kirkland Extra Virgin Olive Oil 2 L</string>
+    <string name="hint_folder">Folder</string>
+    <string name="no_folder">No folder</string>
+    <string name="new_folder_item">+ New folder…</string>
+    <string name="new_folder">New folder</string>
+    <string name="rename_folder">Rename folder</string>
+    <string name="rename">Rename</string>
+    <string name="close">Close</string>
+    <string name="manage_folders">Manage folders</string>
+    <string name="delete_folder_title">Delete folder \"%1$s\"?</string>
+    <string name="delete_folder_text">The items in it are kept. They just won\'t be in a folder anymore.</string>
+    <string name="err_folder_name">Enter a name</string>
+    <string name="hint_folder_name">Folder name, e.g. Kitchen</string>
+    <string name="folder_all">All</string>
+    <string name="folder_with_count">%1$s (%2$d)</string>
+    <string name="empty_folder_title">This folder is empty</string>
+    <string name="empty_folder_text">Tap \"Add item\" to add something here, or move items into it from their edit screen.</string>
 </resources>

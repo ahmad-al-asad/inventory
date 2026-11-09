@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 
 import com.stockkeep.app.Prefs;
+import com.stockkeep.app.data.Item;
 import com.stockkeep.app.data.ItemWithBatches;
 import com.stockkeep.app.data.Repository;
 import com.stockkeep.app.logic.DateUtil;
@@ -29,7 +30,12 @@ public class MainViewModel extends AndroidViewModel {
     public static final int SORT_RECENT = 2;
     public static final int SORT_QUANTITY = 3;
 
+    /** Folder filter: all folders, items without a folder, or one folder's id. */
+    public static final long CATEGORY_ALL = -1;
+    public static final long CATEGORY_NONE = 0;
+
     private final LiveData<List<ItemWithBatches>> source;
+    private long categoryFilter = CATEGORY_ALL;
     private final MediatorLiveData<List<ItemWithBatches>> visible = new MediatorLiveData<>();
     private String query = "";
     private Filter filter = Filter.ALL;
@@ -54,6 +60,37 @@ public class MainViewModel extends AndroidViewModel {
     public void setQuery(String q) {
         query = q == null ? "" : q;
         recompute();
+    }
+
+    public void setCategory(long category) {
+        if (category == categoryFilter) return;
+        categoryFilter = category;
+        recompute();
+    }
+
+    public long getCategory() {
+        return categoryFilter;
+    }
+
+    /** Active (not archived) item counts per folder id; key CATEGORY_NONE = no folder, CATEGORY_ALL = all. */
+    @NonNull
+    public Map<Long, Integer> activeCounts() {
+        Map<Long, Integer> counts = new HashMap<>();
+        List<ItemWithBatches> all = source.getValue();
+        if (all == null) return counts;
+        for (ItemWithBatches iwb : all) {
+            if (iwb.item.archived) continue;
+            long key = iwb.item.categoryId == null ? CATEGORY_NONE : iwb.item.categoryId;
+            counts.merge(key, 1, Integer::sum);
+            counts.merge(CATEGORY_ALL, 1, Integer::sum);
+        }
+        return counts;
+    }
+
+    /** Search looks at both the display name and the product name. */
+    private static boolean matches(Item item, String q) {
+        if (item.name.toLowerCase(Locale.ROOT).contains(q)) return true;
+        return item.productName != null && item.productName.toLowerCase(Locale.ROOT).contains(q);
     }
 
     public void setFilter(Filter f) {
@@ -90,7 +127,9 @@ public class MainViewModel extends AndroidViewModel {
         Map<Long, Long> soonest = new HashMap<>();
         List<ItemWithBatches> out = new ArrayList<>();
         for (ItemWithBatches iwb : all) {
-            if (!q.isEmpty() && !iwb.item.name.toLowerCase(Locale.ROOT).contains(q)) continue;
+            if (!q.isEmpty() && !matches(iwb.item, q)) continue;
+            if (categoryFilter == CATEGORY_NONE && iwb.item.categoryId != null) continue;
+            if (categoryFilter > 0 && (iwb.item.categoryId == null || iwb.item.categoryId != categoryFilter)) continue;
             // Archived (no longer used) items only show under the "Archived" filter.
             if (iwb.item.archived != (filter == Filter.ARCHIVED)) continue;
             Long date = Expiry.soonest(iwb);

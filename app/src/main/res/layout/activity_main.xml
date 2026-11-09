@@ -17,12 +17,22 @@
             app:title="@string/app_name"
             app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
 
+        <!-- Folders: shown once at least one folder exists. -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/folder_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:tabGravity="start"
+            app:tabMode="scrollable" />
+
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:clipToPadding="false"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
+            android:paddingTop="8dp"
             android:paddingBottom="8dp"
             android:scrollbars="none">
 

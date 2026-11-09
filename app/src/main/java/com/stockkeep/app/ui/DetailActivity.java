@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,10 +18,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.snackbar.Snackbar;
 import com.stockkeep.app.Prefs;
 import com.stockkeep.app.R;
 import com.stockkeep.app.data.Batch;
+import com.stockkeep.app.data.Category;
 import com.stockkeep.app.data.ImageStore;
 import com.stockkeep.app.data.ItemWithBatches;
 import com.stockkeep.app.data.Link;
@@ -31,7 +32,9 @@ import com.stockkeep.app.logic.DateUtil;
 import com.stockkeep.app.logic.Expiry;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DetailActivity extends AppCompatActivity {
     private static final String EXTRA_ID = "item_id";
@@ -47,6 +50,11 @@ public class DetailActivity extends AppCompatActivity {
     private MaterialToolbar toolbar;
     private ImageView photo;
     private TextView name;
+    private TextView productName;
+    private TextView folder;
+    private MaterialSwitch switchInUse;
+    private MaterialButton btnOpen;
+    private final Map<Long, String> folderNames = new HashMap<>();
     private TextView total;
     private TextView summary;
     private TextView batchesEmpty;
@@ -73,9 +81,6 @@ public class DetailActivity extends AppCompatActivity {
             if (id == R.id.action_edit) {
                 startActivity(EditItemActivity.intent(this, itemId));
                 return true;
-            } else if (id == R.id.action_archive) {
-                if (current != null) setArchived(!current.item.archived);
-                return true;
             } else if (id == R.id.action_delete) {
                 confirmDelete();
                 return true;
@@ -85,6 +90,11 @@ public class DetailActivity extends AppCompatActivity {
 
         photo = findViewById(R.id.photo);
         name = findViewById(R.id.name);
+        productName = findViewById(R.id.product_name);
+        folder = findViewById(R.id.folder);
+        switchInUse = findViewById(R.id.switch_in_use);
+        btnOpen = findViewById(R.id.btn_open);
+        btnOpen.setOnClickListener(v -> repo.openNext(itemId));
         total = findViewById(R.id.total);
         summary = findViewById(R.id.summary);
         batchesEmpty = findViewById(R.id.batches_empty);
@@ -138,6 +148,12 @@ public class DetailActivity extends AppCompatActivity {
         batches.setNestedScrollingEnabled(false);
         batches.setAdapter(adapter);
 
+        repo.observeCategories().observe(this, cats -> {
+            folderNames.clear();
+            for (Category c : cats) folderNames.put(c.id, c.name);
+            if (current != null) bind();
+        });
+
         repo.observe(itemId).observe(this, iwb -> {
             if (iwb == null) {
                 finish();
@@ -160,23 +176,25 @@ public class DetailActivity extends AppCompatActivity {
         int soonDays = Prefs.soonDays(this);
         int count = iwb.totalQuantity();
         int opened = iwb.openedCount();
+        int sealed = count - opened;
         String unit = TextUtils.isEmpty(iwb.item.unit) ? "" : " " + iwb.item.unit;
 
         name.setText(iwb.item.name);
+        boolean hasProduct = !TextUtils.isEmpty(iwb.item.productName) && !iwb.item.productName.equals(iwb.item.name);
+        productName.setVisibility(hasProduct ? View.VISIBLE : View.GONE);
+        productName.setText(hasProduct ? iwb.item.productName : "");
+        String folderName = iwb.item.categoryId == null ? null : folderNames.get(iwb.item.categoryId);
+        folder.setVisibility(folderName == null ? View.GONE : View.VISIBLE);
+        folder.setText(folderName);
+
+        switchInUse.setOnCheckedChangeListener(null);
+        switchInUse.setChecked(!iwb.item.archived);
+        switchInUse.setOnCheckedChangeListener((sw, checked) -> setArchived(!checked));
         UiUtil.loadPhoto(photo, iwb.item.photo);
 
         archivedBanner.setVisibility(iwb.item.archived ? View.VISIBLE : View.GONE);
-        MenuItem archive = toolbar.getMenu().findItem(R.id.action_archive);
-        if (archive != null) {
-            archive.setTitle(iwb.item.archived ? R.string.mark_in_use : R.string.archive);
-            archive.setIcon(iwb.item.archived ? R.drawable.ic_unarchive : R.drawable.ic_archive);
-        }
 
-        String totalText;
-        if (count == 0) totalText = getString(R.string.out_of_stock);
-        else totalText = getString(R.string.qty_in_stock, count, unit);
-        if (opened > 0) totalText += " · " + getString(R.string.n_opened, opened);
-        total.setText(totalText);
+        total.setText(UiUtil.stockText(this, sealed, opened, unit));
 
         Long soonest = Expiry.soonest(iwb);
         if (soonest != null) {
@@ -189,6 +207,7 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         btnUse.setEnabled(count > 0);
+        btnOpen.setEnabled(sealed > 0);
         bindLinks(iwb.sortedLinks());
 
         List<Batch> sorted = new ArrayList<>(iwb.batches);

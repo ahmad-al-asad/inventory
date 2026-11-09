@@ -72,6 +72,15 @@ final class UiUtil {
         }
     }
 
+    /** e.g. "4 in stock · 1 opened", "1 opened · none sealed", "Out of stock". "In stock" means sealed. */
+    @NonNull
+    static String stockText(@NonNull Context c, int sealed, int opened, @NonNull String unit) {
+        if (sealed + opened == 0) return c.getString(R.string.out_of_stock);
+        if (opened == 0) return c.getString(R.string.qty_in_stock, sealed, unit);
+        if (sealed == 0) return c.getString(R.string.qty_opened_none_sealed, opened);
+        return c.getString(R.string.qty_in_stock_and_opened, sealed, unit, opened);
+    }
+
     static int statusColor(@NonNull Context c, @NonNull Expiry.Status s) {
         switch (s) {
             case EXPIRED:

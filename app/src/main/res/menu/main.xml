@@ -26,4 +26,8 @@
         android:title="@string/settings"
         app:iconTint="?attr/colorOnSurfaceVariant"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_folders"
+        android:title="@string/manage_folders"
+        app:showAsAction="never" />
 </menu>

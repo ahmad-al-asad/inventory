@@ -33,7 +33,7 @@ import java.util.zip.ZipOutputStream;
  */
 public final class BackupManager {
     private static final String FORMAT = "stockkeep-backup";
-    private static final int FORMAT_VERSION = 2; // 2 = links list + archived (app 1.2.0)
+    private static final int FORMAT_VERSION = 3; // 2 = links + archived (1.2.0), 3 = product name + folders (1.3.0)
     private static final String DATA_ENTRY = "data.json";
     private static final String PHOTO_PREFIX = "photos/";
 
@@ -50,6 +50,8 @@ public final class BackupManager {
             JSONObject o = new JSONObject();
             o.put("id", it.id);
             o.put("name", it.name);
+            o.put("productName", it.productName == null ? JSONObject.NULL : it.productName);
+            o.put("categoryId", it.categoryId == null ? JSONObject.NULL : it.categoryId);
             o.put("photo", it.photo == null ? JSONObject.NULL : it.photo);
             o.put("unit", it.unit == null ? JSONObject.NULL : it.unit);
             o.put("archived", it.archived);
@@ -86,6 +88,15 @@ public final class BackupManager {
         root.put("version", FORMAT_VERSION);
         root.put("exportedAt", System.currentTimeMillis());
         root.put("items", items);
+        JSONArray cats = new JSONArray();
+        for (Category cat : AppDatabase.get(c).dao().getCategories()) {
+            JSONObject co = new JSONObject();
+            co.put("id", cat.id);
+            co.put("name", cat.name);
+            co.put("position", cat.position);
+            cats.put(co);
+        }
+        root.put("categories", cats);
 
         OutputStream os = c.getContentResolver().openOutputStream(destination);
         if (os == null) throw new IOException("Cannot write to the chosen file");
@@ -145,12 +156,26 @@ public final class BackupManager {
         List<Item> items = new ArrayList<>();
         List<Batch> batches = new ArrayList<>();
         List<Link> links = new ArrayList<>();
+        List<Category> categories = new ArrayList<>();
+        JSONArray catArr = root.optJSONArray("categories");
+        if (catArr != null) {
+            for (int i = 0; i < catArr.length(); i++) {
+                JSONObject co = catArr.getJSONObject(i);
+                Category cat = new Category();
+                cat.id = co.getLong("id");
+                cat.name = co.getString("name");
+                cat.position = co.optInt("position", 0);
+                categories.add(cat);
+            }
+        }
         JSONArray arr = root.getJSONArray("items");
         for (int i = 0; i < arr.length(); i++) {
             JSONObject o = arr.getJSONObject(i);
             Item it = new Item();
             it.id = o.getLong("id");
             it.name = o.getString("name");
+            it.productName = optString(o, "productName");
+            it.categoryId = optLong(o, "categoryId");
             it.photo = optString(o, "photo");
             it.unit = optString(o, "unit");
             it.archived = o.optBoolean("archived", false);
@@ -209,6 +234,8 @@ public final class BackupManager {
             dao.deleteAllLinks();
             dao.deleteAllBatches();
             dao.deleteAllItems();
+            dao.deleteAllCategories();
+            for (Category cat : categories) dao.insertCategory(cat);
             for (Item it : items) dao.insertItem(it);
             for (Batch b : batches) dao.insertBatch(b);
             if (!links.isEmpty()) dao.insertLinks(links);

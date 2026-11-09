@@ -4,10 +4,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 /** A product you keep in stock, e.g. "Olive oil". Things that are the same for every unit live here. */
-@Entity(tableName = "items")
+@Entity(tableName = "items", indices = @Index("categoryId"))
 public class Item {
     public static final int LIFE_DAYS = 0;
     public static final int LIFE_WEEKS = 1;
@@ -16,8 +17,17 @@ public class Item {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
+    /** Display name: short name shown everywhere in the app, e.g. "Olive oil". */
     @NonNull
     public String name = "";
+
+    /** Actual product name as on the package, e.g. "Kirkland Extra Virgin Olive Oil 2 L". Optional. */
+    @Nullable
+    public String productName;
+
+    /** Folder this item is in, or null for none. */
+    @Nullable
+    public Long categoryId;
 
     /** File name of the photo inside the app's private "photos" folder. */
     @Nullable
@@ -68,7 +78,7 @@ public class Item {
 
     @NonNull
     public String contentKey() {
-        return id + "|" + name + "|" + photo + "|" + unit + "|" + openLifeAmount + "|"
+        return id + "|" + name + "|" + productName + "|" + categoryId + "|" + photo + "|" + unit + "|" + openLifeAmount + "|"
                 + openLifeUnit + "|" + notifyLow + "|" + notifyOut + "|" + archived;
     }
 }

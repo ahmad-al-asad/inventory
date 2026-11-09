@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.text.TextUtils;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -24,14 +25,18 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.tabs.TabLayout;
 import com.stockkeep.app.Prefs;
 import com.stockkeep.app.R;
+import com.stockkeep.app.data.Category;
 import com.stockkeep.app.data.ImageStore;
 import com.stockkeep.app.data.ItemWithBatches;
 import com.stockkeep.app.data.Repository;
 import com.stockkeep.app.logic.DateUtil;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -45,6 +50,10 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView list;
     private GridLayoutManager layoutManager;
     private MaterialToolbar toolbar;
+    private TabLayout folderTabs;
+    private final List<Category> folders = new ArrayList<>();
+    private boolean buildingTabs;
+    private String currentQuery = "";
 
     private final ActivityResultLauncher<String> notificationPermission =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -93,9 +102,33 @@ public class MainActivity extends AppCompatActivity {
             }
         }).attachToRecyclerView(list);
 
-        fab.setOnClickListener(v -> startActivity(EditItemActivity.intent(this, 0)));
+        fab.setOnClickListener(v -> startActivity(EditItemActivity.newInFolder(this, vm.getCategory())));
 
-        vm.items().observe(this, this::showItems);
+        folderTabs = findViewById(R.id.folder_tabs);
+        folderTabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                if (!buildingTabs && tab.getTag() instanceof Long) vm.setCategory((Long) tab.getTag());
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
+        });
+        Repository.get(this).observeCategories().observe(this, cats -> {
+            folders.clear();
+            folders.addAll(cats);
+            buildFolderTabs();
+        });
+
+        vm.items().observe(this, items -> {
+            showItems(items);
+            buildFolderTabs(); // item counts per folder may have changed
+        });
 
         askForNotificationPermission();
     }
@@ -124,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public boolean onQueryTextChange(String text) {
+                    currentQuery = text;
                     vm.setQuery(text);
                     return true;
                 }
@@ -136,6 +170,9 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             } else if (id == R.id.action_sort) {
                 showSortDialog();
+                return true;
+            } else if (id == R.id.action_folders) {
+                FolderDialogs.manage(this, new ArrayList<>(folders));
                 return true;
             } else if (id == R.id.action_settings) {
                 startActivity(new android.content.Intent(this, SettingsActivity.class));
@@ -157,6 +194,59 @@ public class MainActivity extends AppCompatActivity {
             else if (id == R.id.chip_archived) f = MainViewModel.Filter.ARCHIVED;
             vm.setFilter(f);
         });
+    }
+
+    /** One tab per folder, plus "All" and (if needed) "No folder", each with its number of items in use. */
+    private void buildFolderTabs() {
+        if (folders.isEmpty()) {
+            folderTabs.setVisibility(View.GONE);
+            if (vm.getCategory() != MainViewModel.CATEGORY_ALL) vm.setCategory(MainViewModel.CATEGORY_ALL);
+            return;
+        }
+        Map<Long, Integer> counts = vm.activeCounts();
+        long selected = vm.getCategory();
+        boolean selectedExists = selected == MainViewModel.CATEGORY_ALL || selected == MainViewModel.CATEGORY_NONE;
+        for (Category c : folders) if (c.id == selected) selectedExists = true;
+        if (!selectedExists) {
+            selected = MainViewModel.CATEGORY_ALL;
+            vm.setCategory(selected);
+        }
+
+        // Only rebuild the tabs if the set of folders changed; otherwise just refresh the counts,
+        // so the tab bar doesn't jump around while you use the app.
+        List<Long> ids = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
+        ids.add(MainViewModel.CATEGORY_ALL);
+        labels.add(getString(R.string.folder_all));
+        for (Category c : folders) {
+            ids.add(c.id);
+            labels.add(c.name);
+        }
+        Integer loose = counts.get(MainViewModel.CATEGORY_NONE);
+        if ((loose != null && loose > 0) || selected == MainViewModel.CATEGORY_NONE) {
+            ids.add(MainViewModel.CATEGORY_NONE);
+            labels.add(getString(R.string.no_folder));
+        }
+
+        boolean same = folderTabs.getTabCount() == ids.size();
+        for (int i = 0; same && i < ids.size(); i++) {
+            TabLayout.Tab t = folderTabs.getTabAt(i);
+            same = t != null && ids.get(i).equals(t.getTag());
+        }
+        buildingTabs = true;
+        if (!same) folderTabs.removeAllTabs();
+        for (int i = 0; i < ids.size(); i++) {
+            Integer n = counts.get(ids.get(i));
+            String text = n == null || n == 0 ? labels.get(i) : getString(R.string.folder_with_count, labels.get(i), n);
+            if (same) {
+                TabLayout.Tab t = folderTabs.getTabAt(i);
+                if (t != null) t.setText(text);
+            } else {
+                folderTabs.addTab(folderTabs.newTab().setText(text).setTag(ids.get(i)), ids.get(i) == selected);
+            }
+        }
+        buildingTabs = false;
+        folderTabs.setVisibility(View.VISIBLE);
     }
 
     private void showViewDialog() {
@@ -216,7 +306,14 @@ public class MainActivity extends AppCompatActivity {
         boolean empty = items == null || items.isEmpty();
         emptyView.setVisibility(empty ? View.VISIBLE : View.GONE);
         if (empty) {
-            if (vm.getFilter() == MainViewModel.Filter.ARCHIVED) {
+            if (vm.getCategory() != MainViewModel.CATEGORY_ALL && vm.getFilter() == MainViewModel.Filter.ALL
+                    && !TextUtils.isEmpty(currentQuery)) {
+                emptyTitle.setText(R.string.empty_filtered_title);
+                emptyText.setText(R.string.empty_filtered_text);
+            } else if (vm.getCategory() != MainViewModel.CATEGORY_ALL && vm.getFilter() == MainViewModel.Filter.ALL) {
+                emptyTitle.setText(R.string.empty_folder_title);
+                emptyText.setText(R.string.empty_folder_text);
+            } else if (vm.getFilter() == MainViewModel.Filter.ARCHIVED) {
                 emptyTitle.setText(R.string.empty_archived_title);
                 emptyText.setText(R.string.empty_archived_text);
             } else if (vm.hasAnyItems()) {

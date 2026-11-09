@@ -59,6 +59,36 @@ public class Repository {
         return dao.observe(id);
     }
 
+    // ---------- folders ----------
+
+    public LiveData<List<Category>> observeCategories() {
+        return dao.observeCategories();
+    }
+
+    public void addCategory(@NonNull String name, @Nullable Consumer<Long> done) {
+        io.execute(() -> {
+            Category c = new Category();
+            c.name = name.trim();
+            long id = dao.insertCategory(c);
+            if (done != null) main.post(() -> done.accept(id));
+        });
+    }
+
+    public void renameCategory(@NonNull Category c, @NonNull String name) {
+        io.execute(() -> {
+            c.name = name.trim();
+            dao.updateCategory(c);
+        });
+    }
+
+    /** Deletes the folder. Its items are kept and simply have no folder afterwards. */
+    public void deleteCategory(long id) {
+        io.execute(() -> db.runInTransaction(() -> {
+            dao.clearCategory(id);
+            dao.deleteCategory(id);
+        }));
+    }
+
     public void load(long id, @NonNull Consumer<ItemWithBatches> callback) {
         io.execute(() -> {
             ItemWithBatches result = dao.get(id);
@@ -181,6 +211,21 @@ public class Repository {
             target.quantity--;
             if (target.quantity <= 0) dao.deleteBatch(target);
             else dao.updateBatch(target);
+        });
+    }
+
+    /** Opens one sealed unit of the item: the one that expires soonest. */
+    public void openNext(long itemId) {
+        io.execute(() -> {
+            ItemWithBatches iwb = dao.get(itemId);
+            if (iwb == null) return;
+            Batch best = null;
+            java.util.Comparator<Batch> order = Expiry.useOrder(iwb.item);
+            for (Batch b : iwb.batches) {
+                if (b.quantity <= 0 || b.isOpened()) continue;
+                if (best == null || order.compare(b, best) < 0) best = b;
+            }
+            if (best != null) openOne(best);
         });
     }
 

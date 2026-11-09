@@ -74,6 +74,29 @@ public interface ItemDao {
     @Query("DELETE FROM links")
     void deleteAllLinks();
 
+    // ---------- folders ----------
+
+    @Query("SELECT * FROM categories ORDER BY name COLLATE NOCASE")
+    LiveData<List<Category>> observeCategories();
+
+    @Query("SELECT * FROM categories ORDER BY name COLLATE NOCASE")
+    List<Category> getCategories();
+
+    @Insert
+    long insertCategory(Category c);
+
+    @Update
+    void updateCategory(Category c);
+
+    @Query("DELETE FROM categories WHERE id = :id")
+    void deleteCategory(long id);
+
+    @Query("UPDATE items SET categoryId = NULL WHERE categoryId = :id")
+    void clearCategory(long id);
+
+    @Query("DELETE FROM categories")
+    void deleteAllCategories();
+
     @Query("SELECT COALESCE(SUM(quantity), 0) FROM batches WHERE itemId = :itemId")
     int totalFor(long itemId);
 }

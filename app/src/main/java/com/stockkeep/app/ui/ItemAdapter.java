@@ -111,14 +111,20 @@ public class ItemAdapter extends ListAdapter<ItemWithBatches, ItemAdapter.Holder
         h.name.setText(item.name);
         UiUtil.loadPhoto(h.photo, item.photo);
 
+        // "In stock" counts sealed units; opened ones are shown separately.
+        int sealed = total - opened;
         if (compact) {
-            h.quantity.setText(total == 0 ? c.getString(R.string.out_short) : c.getString(R.string.qty_short, total, unit));
+            String q;
+            if (total == 0) q = c.getString(R.string.out_short);
+            else if (opened == 0) q = c.getString(R.string.qty_short, sealed, unit);
+            else q = c.getString(R.string.qty_short_opened, sealed, opened);
+            h.quantity.setText(q);
         } else if (total == 0) {
             h.quantity.setText(R.string.out_of_stock);
-        } else if (total == 1) {
-            h.quantity.setText(R.string.qty_last);
+        } else if (sealed == 0) {
+            h.quantity.setText(R.string.none_sealed);
         } else {
-            h.quantity.setText(c.getString(R.string.qty_in_stock, total, unit));
+            h.quantity.setText(c.getString(R.string.qty_in_stock, sealed, unit));
         }
 
         h.opened.setVisibility(!compact && opened > 0 ? View.VISIBLE : View.GONE);
