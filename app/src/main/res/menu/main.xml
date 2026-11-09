@@ -9,6 +9,12 @@
         app:iconTint="?attr/colorOnSurfaceVariant"
         app:showAsAction="ifRoom|collapseActionView" />
     <item
+        android:id="@+id/action_filter"
+        android:icon="@drawable/ic_filter"
+        android:title="@string/filter"
+        app:iconTint="?attr/colorOnSurfaceVariant"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_view"
         android:icon="@drawable/ic_view_grid"
         android:title="@string/view_as"
@@ -18,16 +24,18 @@
         android:id="@+id/action_sort"
         android:icon="@drawable/ic_sort"
         android:title="@string/sort_by"
-        app:iconTint="?attr/colorOnSurfaceVariant"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_select"
+        android:title="@string/select_items"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_folders"
+        android:title="@string/folders_title"
+        app:showAsAction="never" />
     <item
         android:id="@+id/action_settings"
         android:icon="@drawable/ic_settings"
         android:title="@string/settings"
-        app:iconTint="?attr/colorOnSurfaceVariant"
-        app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/action_folders"
-        android:title="@string/manage_folders"
         app:showAsAction="never" />
 </menu>

@@ -32,9 +32,7 @@ import com.stockkeep.app.logic.DateUtil;
 import com.stockkeep.app.logic.Expiry;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class DetailActivity extends AppCompatActivity {
     private static final String EXTRA_ID = "item_id";
@@ -54,7 +52,7 @@ public class DetailActivity extends AppCompatActivity {
     private TextView folder;
     private MaterialSwitch switchInUse;
     private MaterialButton btnOpen;
-    private final Map<Long, String> folderNames = new HashMap<>();
+    private final List<Category> folders = new ArrayList<>();
     private TextView total;
     private TextView summary;
     private TextView batchesEmpty;
@@ -95,6 +93,11 @@ public class DetailActivity extends AppCompatActivity {
         switchInUse = findViewById(R.id.switch_in_use);
         btnOpen = findViewById(R.id.btn_open);
         btnOpen.setOnClickListener(v -> repo.openNext(itemId));
+        folder.setOnClickListener(v -> {
+            if (current == null) return;
+            FolderDialogs.pickFolders(this, folders, new java.util.LinkedHashSet<>(current.folderIds),
+                    chosen -> repo.setFolders(java.util.Collections.singletonList(itemId), chosen));
+        });
         total = findViewById(R.id.total);
         summary = findViewById(R.id.summary);
         batchesEmpty = findViewById(R.id.batches_empty);
@@ -149,8 +152,8 @@ public class DetailActivity extends AppCompatActivity {
         batches.setAdapter(adapter);
 
         repo.observeCategories().observe(this, cats -> {
-            folderNames.clear();
-            for (Category c : cats) folderNames.put(c.id, c.name);
+            folders.clear();
+            folders.addAll(cats);
             if (current != null) bind();
         });
 
@@ -185,9 +188,11 @@ public class DetailActivity extends AppCompatActivity {
         boolean showProduct = iwb.item.hasDisplayName();
         productName.setVisibility(showProduct ? View.VISIBLE : View.GONE);
         productName.setText(showProduct ? iwb.item.name : "");
-        String folderName = iwb.item.categoryId == null ? null : folderNames.get(iwb.item.categoryId);
-        folder.setVisibility(folderName == null ? View.GONE : View.VISIBLE);
-        folder.setText(folderName);
+        // The folders it's in; tap to change them.
+        String folderText = FolderDialogs.names(folders, iwb.folderIds);
+        folder.setVisibility(folderText.isEmpty() ? View.GONE : View.VISIBLE);
+        folder.setText(folderText);
+        folder.setContentDescription(getString(R.string.change_folders, folderText));
 
         switchInUse.setOnCheckedChangeListener(null);
         switchInUse.setChecked(!iwb.item.archived);

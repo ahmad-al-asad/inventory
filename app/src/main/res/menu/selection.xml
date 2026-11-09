@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_move"
+        android:icon="@drawable/ic_drive_file_move"
+        android:title="@string/move_to_folder"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_add_folder"
+        android:icon="@drawable/ic_create_new_folder"
+        android:title="@string/add_to_folder"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_remove_folder"
+        android:icon="@drawable/ic_folder_off"
+        android:title="@string/remove_from_folder"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_select_all"
+        android:icon="@drawable/ic_select_all"
+        android:title="@string/select_all"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_archive_selected"
+        android:icon="@drawable/ic_archive"
+        android:title="@string/archive_selected"
+        app:showAsAction="never" />
+</menu>

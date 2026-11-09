@@ -13,4 +13,5 @@
     <color name="status_none">#757575</color>
     <color name="status_on_strong">#1A0000</color>
     <color name="status_on_soon">#241A00</color>
+    <color name="action_mode_background">#324B47</color>
 </resources>

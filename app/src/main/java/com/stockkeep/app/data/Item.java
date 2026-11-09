@@ -29,7 +29,7 @@ public class Item {
     @Nullable
     public String displayName;
 
-    /** Folder this item is in, or null for none. */
+    /** Only used by database version 3 (one folder per item). Folders now live in "item_categories". */
     @Nullable
     public Long categoryId;
 

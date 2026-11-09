@@ -35,6 +35,10 @@
             android:parentActivityName=".ui.MainActivity" />
 
         <activity
+            android:name=".ui.FoldersActivity"
+            android:parentActivityName=".ui.SettingsActivity" />
+
+        <activity
             android:name=".ui.LockActivity"
             android:launchMode="singleTop" />
 

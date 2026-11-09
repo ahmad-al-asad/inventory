@@ -1,6 +1,7 @@
 package com.stockkeep.app.ui;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,11 +13,20 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.color.MaterialColors;
+
 import com.stockkeep.app.R;
 import com.stockkeep.app.data.Item;
 import com.stockkeep.app.data.ItemWithBatches;
 import com.stockkeep.app.logic.DateUtil;
 import com.stockkeep.app.logic.Expiry;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class ItemAdapter extends ListAdapter<ItemWithBatches, ItemAdapter.Holder> {
 
@@ -28,6 +38,10 @@ public class ItemAdapter extends ListAdapter<ItemWithBatches, ItemAdapter.Holder
 
     public interface OnItemClick {
         void onClick(@NonNull ItemWithBatches iwb);
+    }
+
+    public interface OnItemLongClick {
+        void onLongClick(@NonNull ItemWithBatches iwb);
     }
 
     private static final DiffUtil.ItemCallback<ItemWithBatches> DIFF = new DiffUtil.ItemCallback<ItemWithBatches>() {
@@ -43,13 +57,74 @@ public class ItemAdapter extends ListAdapter<ItemWithBatches, ItemAdapter.Holder
     };
 
     private final OnItemClick onClick;
+    private final OnItemLongClick onLongClick;
+    /** Ids of items ticked in selection mode. */
+    private final Set<Long> selected = new LinkedHashSet<>();
     private int soonDays = 3;
     private long today = DateUtil.today();
     private int viewMode = VIEW_GRID;
 
-    public ItemAdapter(@NonNull OnItemClick onClick) {
+    public ItemAdapter(@NonNull OnItemClick onClick, @NonNull OnItemLongClick onLongClick) {
         super(DIFF);
         this.onClick = onClick;
+        this.onLongClick = onLongClick;
+    }
+
+    // ---------- selection ----------
+
+    public boolean isSelecting() {
+        return !selected.isEmpty();
+    }
+
+    public void toggle(long itemId) {
+        if (!selected.remove(itemId)) selected.add(itemId);
+        notifyItemRangeChanged(0, getItemCount(), PAYLOAD_SELECTION);
+    }
+
+    public void selectAll() {
+        for (ItemWithBatches iwb : getCurrentList()) selected.add(iwb.item.id);
+        notifyItemRangeChanged(0, getItemCount(), PAYLOAD_SELECTION);
+    }
+
+    public void clearSelection() {
+        if (selected.isEmpty()) return;
+        selected.clear();
+        notifyItemRangeChanged(0, getItemCount(), PAYLOAD_SELECTION);
+    }
+
+    @NonNull
+    public List<Long> selectedIds() {
+        return new ArrayList<>(selected);
+    }
+
+    /** Drops ticks for items that are no longer shown (e.g. after a filter change). */
+    public void keepSelectionVisible() {
+        Set<Long> visible = new HashSet<>();
+        for (ItemWithBatches iwb : getCurrentList()) visible.add(iwb.item.id);
+        if (selected.retainAll(visible)) notifyItemRangeChanged(0, getItemCount(), PAYLOAD_SELECTION);
+    }
+
+    private static final Object PAYLOAD_SELECTION = new Object();
+
+    @Override
+    public void onBindViewHolder(@NonNull Holder h, int position, @NonNull List<Object> payloads) {
+        if (payloads.size() == 1 && payloads.get(0) == PAYLOAD_SELECTION) {
+            bindSelection(h, getItem(position));
+        } else {
+            super.onBindViewHolder(h, position, payloads);
+        }
+    }
+
+    private void bindSelection(@NonNull Holder h, @NonNull ItemWithBatches iwb) {
+        boolean on = selected.contains(iwb.item.id);
+        if (h.itemView instanceof MaterialCardView) {
+            ((MaterialCardView) h.itemView).setChecked(on);
+        } else {
+            h.itemView.setBackgroundColor(on
+                    ? MaterialColors.getColor(h.itemView, com.google.android.material.R.attr.colorSecondaryContainer)
+                    : Color.TRANSPARENT);
+        }
+        h.itemView.setActivated(on);
     }
 
     @SuppressWarnings("NotifyDataSetChanged")
@@ -152,7 +227,15 @@ public class ItemAdapter extends ListAdapter<ItemWithBatches, ItemAdapter.Holder
         CharSequence desc = item.title() + ", " + h.quantity.getText()
                 + (item.archived ? ", " + c.getString(R.string.badge_archived) : "");
         h.itemView.setContentDescription(desc);
-        h.itemView.setOnClickListener(v -> onClick.onClick(iwb));
+        h.itemView.setOnClickListener(v -> {
+            if (isSelecting()) onLongClick.onLongClick(iwb);
+            else onClick.onClick(iwb);
+        });
+        h.itemView.setOnLongClickListener(v -> {
+            onLongClick.onLongClick(iwb);
+            return true;
+        });
+        bindSelection(h, iwb);
     }
 
     static class Holder extends RecyclerView.ViewHolder {

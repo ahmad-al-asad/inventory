@@ -8,12 +8,6 @@
     <string name="search_hint">Search items</string>
     <string name="sort_by">Sort by</string>
     <string name="settings">Settings</string>
-    <string name="filter_all">All</string>
-    <string name="filter_soon">Expiring soon</string>
-    <string name="filter_expired">Expired</string>
-    <string name="filter_opened">Opened</string>
-    <string name="filter_low">Low stock</string>
-    <string name="filter_archived">Archived</string>
     <string name="empty_archived_title">No archived items</string>
     <string name="empty_archived_text">Items you no longer use can be archived from their page. They\'re kept here for your records.</string>
     <string name="view_as">View as</string>
@@ -21,7 +15,6 @@
     <string name="empty_text">Tap \"Add item\" to start tracking what you have at home.</string>
     <string name="empty_filtered_title">No matching items</string>
     <string name="empty_filtered_text">Try another filter or search.</string>
-    <string name="item_deleted">%1$s deleted</string>
     <string name="undo">Undo</string>
 
     <!-- Quantities and badges -->
@@ -205,20 +198,65 @@
     <string name="helper_display_name">Shorter name to show in the app, e.g. Olive oil. Leave empty to show the product name.</string>
     <string name="hint_product_name">Product name *</string>
     <string name="helper_product_name">Full name as on the package, e.g. Kirkland Extra Virgin Olive Oil 2 L</string>
-    <string name="hint_folder">Folder</string>
-    <string name="no_folder">No folder</string>
+    <string name="hint_folder">Folders</string>
     <string name="new_folder_item">+ New folder…</string>
     <string name="new_folder">New folder</string>
     <string name="rename_folder">Rename folder</string>
     <string name="rename">Rename</string>
-    <string name="close">Close</string>
-    <string name="manage_folders">Manage folders</string>
     <string name="delete_folder_title">Delete folder \"%1$s\"?</string>
-    <string name="delete_folder_text">The items in it are kept. They just won\'t be in a folder anymore.</string>
+    <string name="delete_folder_text">The items in it are kept. Any that aren\'t in another folder move to the Default folder.</string>
     <string name="err_folder_name">Enter a name</string>
     <string name="hint_folder_name">Folder name, e.g. Kitchen</string>
     <string name="folder_all">All</string>
     <string name="folder_with_count">%1$s (%2$d)</string>
     <string name="empty_folder_title">This folder is empty</string>
-    <string name="empty_folder_text">Tap \"Add item\" to add something here, or move items into it from their edit screen.</string>
+    <string name="empty_folder_text">Tap \"Add item\" to add something here, or long-press items in another folder and move them here.</string>
+
+    <!-- 1.4.0: default folder, several folders per item, selection, filter button -->
+    <string name="filter">Filter</string>
+    <string name="select_items">Select all</string>
+    <string name="folders_title">Folders</string>
+    <string name="folders_help">Drag ≡ to change the order of the folder tabs. The Default folder always comes first and holds new items unless you choose other folders.</string>
+    <string name="pref_cat_folders">Folders</string>
+    <string name="pref_folders_summary">Rearrange, rename, add or delete folders</string>
+    <string name="default_folder_note">Default folder · %1$s</string>
+    <string name="drag_to_reorder">Drag to reorder</string>
+    <string name="choose_folders">Folders for this item</string>
+    <string name="done">Done</string>
+    <string name="move_to_folder">Move to folder</string>
+    <string name="add_to_folder">Also add to folder</string>
+    <string name="remove_from_folder">Remove from this folder</string>
+    <string name="remove_from_named_folder">Remove from %1$s</string>
+    <string name="select_all">Select all</string>
+    <string name="archive_selected">Archive (no longer used)</string>
+    <string name="unarchive_selected">Mark as in use</string>
+    <string name="change_folders">Folders: %1$s. Tap to change.</string>
+    <plurals name="folder_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <plurals name="n_selected">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <plurals name="moved_to">
+        <item quantity="one">Moved %1$d item to %2$s</item>
+        <item quantity="other">Moved %1$d items to %2$s</item>
+    </plurals>
+    <plurals name="added_to">
+        <item quantity="one">Added %1$d item to %2$s</item>
+        <item quantity="other">Added %1$d items to %2$s</item>
+    </plurals>
+    <plurals name="removed_from">
+        <item quantity="one">Removed %1$d item from %2$s</item>
+        <item quantity="other">Removed %1$d items from %2$s</item>
+    </plurals>
+    <plurals name="archived_n">
+        <item quantity="one">Archived %1$d item</item>
+        <item quantity="other">Archived %1$d items</item>
+    </plurals>
+    <plurals name="unarchived_n">
+        <item quantity="one">%1$d item back in use</item>
+        <item quantity="other">%1$d items back in use</item>
+    </plurals>
 </resources>

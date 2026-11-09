@@ -37,7 +37,9 @@ import com.stockkeep.app.logic.DateUtil;
 import com.stockkeep.app.security.AppLock;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class EditItemActivity extends AppCompatActivity {
     private static final String EXTRA_ID = "item_id";
@@ -81,8 +83,8 @@ public class EditItemActivity extends AppCompatActivity {
     private EditText displayNameField;
     private MaterialAutoCompleteTextView folderField;
     private final List<Category> folders = new ArrayList<>();
-    @Nullable
-    private Long folderId;
+    /** Folders this item is (or will be) in. Empty = the Default folder. */
+    private final Set<Long> folderIds = new LinkedHashSet<>();
     private EditText qtyField;
     private EditText lifeAmountField;
     private MaterialAutoCompleteTextView unitField;
@@ -143,7 +145,12 @@ public class EditItemActivity extends AppCompatActivity {
         nameField = findViewById(R.id.name);
         displayNameField = findViewById(R.id.display_name);
         folderField = findViewById(R.id.folder);
-        folderField.setOnItemClickListener((parent, view, position, id) -> onFolderPicked(position));
+        folderField.setFocusable(false);
+        folderField.setOnClickListener(v -> FolderDialogs.pickFolders(this, folders, folderIds, chosen -> {
+            folderIds.clear();
+            folderIds.addAll(chosen);
+            showFolders();
+        }));
         repo.observeCategories().observe(this, cats -> {
             folders.clear();
             folders.addAll(cats);
@@ -195,7 +202,8 @@ public class EditItemActivity extends AppCompatActivity {
             String cam = savedInstanceState.getString(STATE_CAMERA_URI);
             cameraUri = cam == null ? null : Uri.parse(cam);
             lifeUnitIndex = savedInstanceState.getInt(STATE_LIFE_UNIT, Item.LIFE_DAYS);
-            folderId = savedInstanceState.containsKey(STATE_FOLDER) ? savedInstanceState.getLong(STATE_FOLDER) : null;
+            long[] saved = savedInstanceState.getLongArray(STATE_FOLDER);
+            if (saved != null) for (long f : saved) folderIds.add(f);
             bought.set(getLongOrNull(savedInstanceState, STATE_BOUGHT));
             expiry.set(getLongOrNull(savedInstanceState, STATE_EXPIRY));
             openedOn.set(getLongOrNull(savedInstanceState, STATE_OPENED));
@@ -206,7 +214,7 @@ public class EditItemActivity extends AppCompatActivity {
             }
         } else if (!isEdit) {
             long f = getIntent().getLongExtra(EXTRA_FOLDER, 0);
-            folderId = f > 0 ? f : null;
+            if (f > 0) folderIds.add(f);
             addLinkRow(null, null);
             qtyField.setText("1");
             bought.set(DateUtil.today());
@@ -232,7 +240,8 @@ public class EditItemActivity extends AppCompatActivity {
         Item item = iwb.item;
         nameField.setText(item.name);
         displayNameField.setText(item.displayName == null ? "" : item.displayName);
-        folderId = item.categoryId;
+        folderIds.clear();
+        folderIds.addAll(iwb.folderIds);
         showFolders();
         unitField.setText(item.unit == null ? "" : item.unit, false);
         for (Link l : iwb.sortedLinks()) addLinkRow(l.label, l.url);
@@ -248,34 +257,11 @@ public class EditItemActivity extends AppCompatActivity {
         showPhoto();
     }
 
-    /** Fills the folder dropdown: "No folder", every folder, then "New folder…". */
+    /** Shows the chosen folders, e.g. "Kitchen, Pantry". None chosen = the Default folder. */
     private void showFolders() {
-        List<String> names = new ArrayList<>();
-        names.add(getString(R.string.no_folder));
-        String selected = getString(R.string.no_folder);
-        for (Category c : folders) {
-            names.add(c.name);
-            if (folderId != null && c.id == folderId) selected = c.name;
-        }
-        names.add(getString(R.string.new_folder_item));
-        folderField.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, names));
-        folderField.setText(selected, false);
-    }
-
-    private void onFolderPicked(int position) {
-        if (position == 0) {
-            folderId = null;
-        } else if (position <= folders.size()) {
-            folderId = folders.get(position - 1).id;
-        } else {
-            showFolders(); // put the old choice back while the user types a name
-            FolderDialogs.askName(this, R.string.new_folder, null, name -> repo.addCategory(name, id -> {
-                folderId = id;
-                showFolders();
-            }));
-            return;
-        }
-        showFolders();
+        String names = FolderDialogs.names(folders, folderIds);
+        if (names.isEmpty() && !folders.isEmpty()) names = folders.get(0).name; // the Default folder
+        folderField.setText(names, false);
     }
 
     /** Adds one editable shop row (name + link) to the "Where to buy" list. */
@@ -400,7 +386,6 @@ public class EditItemActivity extends AppCompatActivity {
         Item item = editing != null ? editing : new Item();
         item.name = name;
         item.displayName = display.isEmpty() || display.equals(name) ? null : display;
-        item.categoryId = folderId;
         String unit = unitField.getText() == null ? "" : unitField.getText().toString().trim();
         item.unit = unit.isEmpty() ? null : unit;
         item.buyLink = null;
@@ -413,7 +398,7 @@ public class EditItemActivity extends AppCompatActivity {
         item.photo = photoName;
 
         if (editing != null) {
-            repo.updateItem(item, links);
+            repo.updateItem(item, links, new ArrayList<>(folderIds));
         } else {
             int qty = UiUtil.parseInt(qtyField.getText(), -1);
             if (qty < 0) {
@@ -438,7 +423,7 @@ public class EditItemActivity extends AppCompatActivity {
                 }
                 batches.add(sealed);
             }
-            repo.createItem(item, batches, links, null);
+            repo.createItem(item, batches, links, new ArrayList<>(folderIds), null);
         }
 
         saved = true;
@@ -459,7 +444,10 @@ public class EditItemActivity extends AppCompatActivity {
         out.putStringArrayList(STATE_TEMP_PHOTOS, tempPhotos);
         if (cameraUri != null) out.putString(STATE_CAMERA_URI, cameraUri.toString());
         out.putInt(STATE_LIFE_UNIT, lifeUnitIndex);
-        if (folderId != null) out.putLong(STATE_FOLDER, folderId);
+        long[] f = new long[folderIds.size()];
+        int i = 0;
+        for (Long id : folderIds) f[i++] = id;
+        out.putLongArray(STATE_FOLDER, f);
         putLongOrNull(out, STATE_BOUGHT, bought.get());
         putLongOrNull(out, STATE_EXPIRY, expiry.get());
         putLongOrNull(out, STATE_OPENED, openedOn.get());

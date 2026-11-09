@@ -75,6 +75,13 @@ public class SettingsActivity extends AppCompatActivity {
                     return true;
                 });
             }
+            Preference folders = findPreference("folders");
+            if (folders != null) {
+                folders.setOnPreferenceClickListener(p -> {
+                    startActivity(new Intent(requireContext(), FoldersActivity.class));
+                    return true;
+                });
+            }
             Preference export = findPreference(Prefs.KEY_EXPORT);
             if (export != null) {
                 export.setOnPreferenceClickListener(p -> {

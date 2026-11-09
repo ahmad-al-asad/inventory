@@ -13,6 +13,7 @@ import com.stockkeep.app.logic.Expiry;
 import com.stockkeep.app.notify.Notifier;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -69,6 +70,7 @@ public class Repository {
         io.execute(() -> {
             Category c = new Category();
             c.name = name.trim();
+            c.position = dao.maxCategoryPosition() + 1; // new folders go at the end
             long id = dao.insertCategory(c);
             if (done != null) main.post(() -> done.accept(id));
         });
@@ -81,25 +83,73 @@ public class Repository {
         });
     }
 
-    /** Deletes the folder. Its items are kept and simply have no folder afterwards. */
+    /** Deletes a folder (never the Default one). Items that were only in it move to the Default folder. */
     public void deleteCategory(long id) {
         io.execute(() -> db.runInTransaction(() -> {
-            dao.clearCategory(id);
-            dao.deleteCategory(id);
+            Long def = dao.getDefaultCategoryId();
+            if (def != null && def == id) return;
+            dao.deleteCategory(id); // memberships go with it
+            fillDefault();
         }));
     }
 
-    public void load(long id, @NonNull Consumer<ItemWithBatches> callback) {
-        io.execute(() -> {
-            ItemWithBatches result = dao.get(id);
-            main.post(() -> callback.accept(result));
-        });
+    /** Saves the order of folders as shown (the Default folder stays first regardless). */
+    public void reorderCategories(@NonNull List<Long> orderedIds) {
+        io.execute(() -> db.runInTransaction(() -> {
+            for (int i = 0; i < orderedIds.size(); i++) dao.setCategoryPosition(orderedIds.get(i), i + 1);
+        }));
+    }
+
+    // ---------- folder membership ----------
+
+    /** Puts items exactly in these folders (none = Default folder). */
+    public void setFolders(@NonNull List<Long> itemIds, @NonNull Collection<Long> folderIds) {
+        io.execute(() -> db.runInTransaction(() -> {
+            dao.deleteMembershipsForItems(itemIds);
+            insertMemberships(itemIds, folderIds);
+            fillDefault();
+        }));
+    }
+
+    /** Also puts items in this folder, keeping their other folders. Leaves the Default folder if it was the only one. */
+    public void addToFolder(@NonNull List<Long> itemIds, long folderId) {
+        io.execute(() -> db.runInTransaction(() -> {
+            Long def = dao.getDefaultCategoryId();
+            if (def != null && def != folderId) dao.deleteMemberships(itemIds, def);
+            insertMemberships(itemIds, java.util.Collections.singletonList(folderId));
+        }));
+    }
+
+    /** Takes items out of one folder. Items left with no folder go back to the Default folder. */
+    public void removeFromFolder(@NonNull List<Long> itemIds, long folderId) {
+        io.execute(() -> db.runInTransaction(() -> {
+            dao.deleteMemberships(itemIds, folderId);
+            fillDefault();
+        }));
+    }
+
+    public void setArchived(@NonNull List<Long> itemIds, boolean archived) {
+        io.execute(() -> dao.setArchived(itemIds, archived));
+    }
+
+    private void insertMemberships(Collection<Long> itemIds, Collection<Long> folderIds) {
+        List<ItemCategory> rows = new ArrayList<>();
+        for (Long item : itemIds) for (Long folder : folderIds) rows.add(new ItemCategory(item, folder));
+        if (!rows.isEmpty()) dao.insertMemberships(rows);
+    }
+
+    /** Any item in no folder goes into the Default folder. */
+    private void fillDefault() {
+        Long def = dao.getDefaultCategoryId();
+        if (def == null) return;
+        insertMemberships(dao.itemsWithoutFolder(), java.util.Collections.singletonList(def));
     }
 
     // ---------- items ----------
 
+    /** Adds a new item. With no folders chosen it goes into the Default folder. */
     public void createItem(@NonNull Item item, @NonNull List<Batch> batches, @NonNull List<Link> links,
-                           @Nullable Consumer<Long> done) {
+                           @NonNull Collection<Long> folderIds, @Nullable Consumer<Long> done) {
         io.execute(() -> {
             long now = System.currentTimeMillis();
             item.createdAt = now;
@@ -113,17 +163,22 @@ public class Repository {
                     dao.insertBatch(b);
                 }
                 insertLinks(id[0], links);
+                insertMemberships(java.util.Collections.singletonList(id[0]), folderIds);
+                fillDefault();
             });
             if (done != null) main.post(() -> done.accept(id[0]));
         });
     }
 
-    /** Saves the item and replaces its list of shop links. */
-    public void updateItem(@NonNull Item item, @NonNull List<Link> links) {
+    /** Saves the item and replaces its list of shop links and its folders (none = Default folder). */
+    public void updateItem(@NonNull Item item, @NonNull List<Link> links, @NonNull Collection<Long> folderIds) {
         io.execute(() -> db.runInTransaction(() -> {
             dao.updateItem(item);
             dao.deleteLinksFor(item.id);
             insertLinks(item.id, links);
+            dao.deleteMembershipsFor(item.id);
+            insertMemberships(java.util.Collections.singletonList(item.id), folderIds);
+            fillDefault();
         }));
     }
 
@@ -165,6 +220,8 @@ public class Repository {
             dao.insertItem(iwb.item);
             for (Batch b : iwb.batches) dao.insertBatch(b);
             if (!iwb.links.isEmpty()) dao.insertLinks(iwb.links);
+            insertMemberships(java.util.Collections.singletonList(iwb.item.id), iwb.folderIds);
+            fillDefault();
         }));
     }
 

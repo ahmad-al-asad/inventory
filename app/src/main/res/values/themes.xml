@@ -10,6 +10,9 @@
         <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+        <!-- The selection bar (long-press items) appears over the top bar. -->
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeBackground">@color/action_mode_background</item>
     </style>
 
     <style name="Badge" parent="">

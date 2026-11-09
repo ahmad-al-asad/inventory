@@ -30,12 +30,13 @@ public class MainViewModel extends AndroidViewModel {
     public static final int SORT_RECENT = 2;
     public static final int SORT_QUANTITY = 3;
 
-    /** Folder filter: all folders, items without a folder, or one folder's id. */
+    /** Folder shown: one folder's id, or every item in every folder. */
     public static final long CATEGORY_ALL = -1;
-    public static final long CATEGORY_NONE = 0;
 
     private final LiveData<List<ItemWithBatches>> source;
     private long categoryFilter = CATEGORY_ALL;
+    /** False until the app has picked the Default folder as the starting tab. */
+    private boolean categoryChosen;
     private final MediatorLiveData<List<ItemWithBatches>> visible = new MediatorLiveData<>();
     private String query = "";
     private Filter filter = Filter.ALL;
@@ -62,7 +63,12 @@ public class MainViewModel extends AndroidViewModel {
         recompute();
     }
 
+    public boolean isCategoryChosen() {
+        return categoryChosen;
+    }
+
     public void setCategory(long category) {
+        categoryChosen = true;
         if (category == categoryFilter) return;
         categoryFilter = category;
         recompute();
@@ -72,7 +78,7 @@ public class MainViewModel extends AndroidViewModel {
         return categoryFilter;
     }
 
-    /** Active (not archived) item counts per folder id; key CATEGORY_NONE = no folder, CATEGORY_ALL = all. */
+    /** Active (not archived) item counts per folder id; key CATEGORY_ALL = all items. */
     @NonNull
     public Map<Long, Integer> activeCounts() {
         Map<Long, Integer> counts = new HashMap<>();
@@ -80,8 +86,7 @@ public class MainViewModel extends AndroidViewModel {
         if (all == null) return counts;
         for (ItemWithBatches iwb : all) {
             if (iwb.item.archived) continue;
-            long key = iwb.item.categoryId == null ? CATEGORY_NONE : iwb.item.categoryId;
-            counts.merge(key, 1, Integer::sum);
+            for (Long f : iwb.folderIds) counts.merge(f, 1, Integer::sum);
             counts.merge(CATEGORY_ALL, 1, Integer::sum);
         }
         return counts;
@@ -128,8 +133,7 @@ public class MainViewModel extends AndroidViewModel {
         List<ItemWithBatches> out = new ArrayList<>();
         for (ItemWithBatches iwb : all) {
             if (!q.isEmpty() && !matches(iwb.item, q)) continue;
-            if (categoryFilter == CATEGORY_NONE && iwb.item.categoryId != null) continue;
-            if (categoryFilter > 0 && (iwb.item.categoryId == null || iwb.item.categoryId != categoryFilter)) continue;
+            if (categoryFilter != CATEGORY_ALL && !iwb.inFolder(categoryFilter)) continue;
             // Archived (no longer used) items only show under the "Archived" filter.
             if (iwb.item.archived != (filter == Filter.ARCHIVED)) continue;
             Long date = Expiry.soonest(iwb);

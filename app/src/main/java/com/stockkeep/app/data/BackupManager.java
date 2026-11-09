@@ -33,7 +33,7 @@ import java.util.zip.ZipOutputStream;
  */
 public final class BackupManager {
     private static final String FORMAT = "stockkeep-backup";
-    private static final int FORMAT_VERSION = 4; // 2 = links + archived (1.2.0), 3 = folders (1.3.0), 4 = name = product name + displayName (1.3.1)
+    private static final int FORMAT_VERSION = 5; // 2 = links + archived (1.2.0), 3 = folders (1.3.0), 4 = product/display names (1.3.1), 5 = several folders per item + Default folder (1.4.0)
     private static final String DATA_ENTRY = "data.json";
     private static final String PHOTO_PREFIX = "photos/";
 
@@ -51,7 +51,9 @@ public final class BackupManager {
             o.put("id", it.id);
             o.put("name", it.name);
             o.put("displayName", it.displayName == null ? JSONObject.NULL : it.displayName);
-            o.put("categoryId", it.categoryId == null ? JSONObject.NULL : it.categoryId);
+            JSONArray folders = new JSONArray();
+            for (Long f : iwb.folderIds) folders.put(f);
+            o.put("folders", folders);
             o.put("photo", it.photo == null ? JSONObject.NULL : it.photo);
             o.put("unit", it.unit == null ? JSONObject.NULL : it.unit);
             o.put("archived", it.archived);
@@ -94,6 +96,7 @@ public final class BackupManager {
             co.put("id", cat.id);
             co.put("name", cat.name);
             co.put("position", cat.position);
+            co.put("isDefault", cat.isDefault);
             cats.put(co);
         }
         root.put("categories", cats);
@@ -158,6 +161,7 @@ public final class BackupManager {
         List<Batch> batches = new ArrayList<>();
         List<Link> links = new ArrayList<>();
         List<Category> categories = new ArrayList<>();
+        List<ItemCategory> memberships = new ArrayList<>();
         JSONArray catArr = root.optJSONArray("categories");
         if (catArr != null) {
             for (int i = 0; i < catArr.length(); i++) {
@@ -166,6 +170,7 @@ public final class BackupManager {
                 cat.id = co.getLong("id");
                 cat.name = co.getString("name");
                 cat.position = co.optInt("position", 0);
+                cat.isDefault = co.optBoolean("isDefault", false);
                 categories.add(cat);
             }
         }
@@ -185,7 +190,14 @@ public final class BackupManager {
                     it.name = product;
                 }
             }
-            it.categoryId = optLong(o, "categoryId");
+            JSONArray fs = o.optJSONArray("folders");
+            if (fs != null) {
+                for (int j = 0; j < fs.length(); j++) memberships.add(new ItemCategory(it.id, fs.getLong(j)));
+            } else {
+                // Backups from 1.3.x had a single "categoryId" per item.
+                Long old = optLong(o, "categoryId");
+                if (old != null) memberships.add(new ItemCategory(it.id, old));
+            }
             it.photo = optString(o, "photo");
             it.unit = optString(o, "unit");
             it.archived = o.optBoolean("archived", false);
@@ -244,11 +256,21 @@ public final class BackupManager {
             dao.deleteAllLinks();
             dao.deleteAllBatches();
             dao.deleteAllItems();
+            dao.deleteAllMemberships();
             dao.deleteAllCategories();
             for (Category cat : categories) dao.insertCategory(cat);
             for (Item it : items) dao.insertItem(it);
             for (Batch b : batches) dao.insertBatch(b);
             if (!links.isEmpty()) dao.insertLinks(links);
+            // Only keep memberships whose folder exists in the backup.
+            java.util.Set<Long> folderIds = new java.util.HashSet<>();
+            for (Category cat : categories) folderIds.add(cat.id);
+            List<ItemCategory> valid = new ArrayList<>();
+            for (ItemCategory m : memberships) if (folderIds.contains(m.categoryId)) valid.add(m);
+            if (!valid.isEmpty()) dao.insertMemberships(valid);
+            // Older backups have no Default folder: create it and put unfiled items in it.
+            db.getOpenHelper().getWritableDatabase().execSQL(AppDatabase.INSERT_DEFAULT_IF_MISSING);
+            db.getOpenHelper().getWritableDatabase().execSQL(AppDatabase.PUT_LOOSE_ITEMS_IN_DEFAULT);
         });
 
         // Swap the photo folder for the restored photos.

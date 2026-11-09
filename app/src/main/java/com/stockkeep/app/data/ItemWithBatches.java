@@ -18,6 +18,15 @@ public class ItemWithBatches {
     @Relation(parentColumn = "id", entityColumn = "itemId")
     public List<Link> links = new ArrayList<>();
 
+    /** Ids of the folders this item is in (at least one; the Default folder if nothing else). */
+    @Relation(parentColumn = "id", entityColumn = "itemId", entity = ItemCategory.class, projection = {"categoryId"})
+    public List<Long> folderIds = new ArrayList<>();
+
+    public boolean inFolder(long folderId) {
+        for (Long id : folderIds) if (id != null && id == folderId) return true;
+        return false;
+    }
+
     public int totalQuantity() {
         int t = 0;
         for (Batch b : batches) t += Math.max(0, b.quantity);
@@ -43,6 +52,7 @@ public class ItemWithBatches {
         StringBuilder sb = new StringBuilder(item.contentKey());
         for (Batch b : batches) sb.append('#').append(b.contentKey());
         for (Link l : links) sb.append('@').append(l.contentKey());
+        for (Long f : folderIds) sb.append('/').append(f);
         return sb.toString();
     }
 }

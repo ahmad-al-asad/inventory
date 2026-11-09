@@ -19,6 +19,14 @@
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/pref_cat_folders" app:iconSpaceReserved="false">
+        <Preference
+            app:key="folders"
+            app:title="@string/folders_title"
+            app:summary="@string/pref_folders_summary"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/pref_cat_expiry" app:iconSpaceReserved="false">
         <ListPreference
             app:key="soon_days"

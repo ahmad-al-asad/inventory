@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Transaction;
 import androidx.room.Update;
@@ -76,11 +77,21 @@ public interface ItemDao {
 
     // ---------- folders ----------
 
-    @Query("SELECT * FROM categories ORDER BY name COLLATE NOCASE")
+    /** Default folder first, then the user's order. */
+    @Query("SELECT * FROM categories ORDER BY isDefault DESC, position, name COLLATE NOCASE")
     LiveData<List<Category>> observeCategories();
 
-    @Query("SELECT * FROM categories ORDER BY name COLLATE NOCASE")
+    @Query("SELECT * FROM categories ORDER BY isDefault DESC, position, name COLLATE NOCASE")
     List<Category> getCategories();
+
+    @Query("SELECT id FROM categories WHERE isDefault = 1 ORDER BY id LIMIT 1")
+    Long getDefaultCategoryId();
+
+    @Query("SELECT COALESCE(MAX(position), 0) FROM categories")
+    int maxCategoryPosition();
+
+    @Query("UPDATE categories SET position = :position WHERE id = :id")
+    void setCategoryPosition(long id, int position);
 
     @Insert
     long insertCategory(Category c);
@@ -91,8 +102,32 @@ public interface ItemDao {
     @Query("DELETE FROM categories WHERE id = :id")
     void deleteCategory(long id);
 
-    @Query("UPDATE items SET categoryId = NULL WHERE categoryId = :id")
-    void clearCategory(long id);
+    // ---------- folder membership ----------
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    void insertMemberships(List<ItemCategory> rows);
+
+    @Query("DELETE FROM item_categories WHERE itemId = :itemId")
+    void deleteMembershipsFor(long itemId);
+
+    @Query("DELETE FROM item_categories WHERE itemId IN (:itemIds)")
+    void deleteMembershipsForItems(List<Long> itemIds);
+
+    @Query("DELETE FROM item_categories WHERE itemId IN (:itemIds) AND categoryId = :categoryId")
+    void deleteMemberships(List<Long> itemIds, long categoryId);
+
+    @Query("DELETE FROM item_categories")
+    void deleteAllMemberships();
+
+    @Query("SELECT categoryId FROM item_categories WHERE itemId = :itemId")
+    List<Long> getFolderIds(long itemId);
+
+    /** Items that are in no folder at all (they belong in the Default folder). */
+    @Query("SELECT id FROM items WHERE id NOT IN (SELECT itemId FROM item_categories)")
+    List<Long> itemsWithoutFolder();
+
+    @Query("UPDATE items SET archived = :archived WHERE id IN (:itemIds)")
+    void setArchived(List<Long> itemIds, boolean archived);
 
     @Query("DELETE FROM categories")
     void deleteAllCategories();

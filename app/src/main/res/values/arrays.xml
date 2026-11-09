@@ -70,4 +70,21 @@
         <item>List</item>
         <item>Compact list</item>
     </string-array>
+    <string-array name="filter_options">
+        <item>Everything (no filter)</item>
+        <item>Expiring soon</item>
+        <item>Expired</item>
+        <item>Opened</item>
+        <item>Low stock (1 or none left)</item>
+        <item>Archived (no longer used)</item>
+    </string-array>
+    <!-- Short names for the "filter is on" chip; same order as filter_options. -->
+    <string-array name="filter_labels">
+        <item>All</item>
+        <item>Expiring soon</item>
+        <item>Expired</item>
+        <item>Opened</item>
+        <item>Low stock</item>
+        <item>Archived</item>
+    </string-array>
 </resources>

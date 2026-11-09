@@ -17,7 +17,7 @@
             app:title="@string/app_name"
             app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
 
-        <!-- Folders: shown once at least one folder exists. -->
+        <!-- Folder tabs: Default first, then your folders in your order, then All. -->
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/folder_tabs"
             android:layout_width="match_parent"
@@ -26,68 +26,19 @@
             app:tabGravity="start"
             app:tabMode="scrollable" />
 
-        <HorizontalScrollView
-            android:layout_width="match_parent"
+<!-- Shown only while a filter is on; tap the x to clear it. -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/active_filter"
+            style="@style/Widget.Material3.Chip.Input"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:clipToPadding="false"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:scrollbars="none">
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chips"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:selectionRequired="true"
-                app:singleLine="true"
-                app:singleSelection="true">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_all"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="@string/filter_all" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_soon"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/filter_soon" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_expired"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/filter_expired" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_opened"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/filter_opened" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_low"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/filter_low" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_archived"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/filter_archived" />
-            </com.google.android.material.chip.ChipGroup>
-        </HorizontalScrollView>
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="6dp"
+            android:checkable="false"
+            android:visibility="gone"
+            app:chipIcon="@drawable/ic_filter"
+            app:chipIconVisible="true"
+            app:closeIconVisible="true" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
